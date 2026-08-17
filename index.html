@@ -248,6 +248,40 @@
   }
   .info-box ol{padding-left:1.2em;margin:10px 0;}
   .info-box li{margin-bottom:6px;}
+
+  .result-card{
+    border:1px solid var(--line);
+    background:var(--paper-2);
+    border-radius:var(--radius);
+    padding:1rem 1.25rem;
+    margin-top:12px;
+  }
+  .result-card p{margin:2px 0;font-size:13.5px;}
+  .badge{
+    display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;
+    padding:2px 9px;border-radius:20px;font-weight:500;
+  }
+  .badge.รอพิจารณา{background:var(--gold-bg);color:var(--gold);}
+  .badge.ผ่านการพิจารณา{background:#E4EEE9;color:var(--forest-dark);}
+  .badge.ไม่ผ่านการพิจารณา{background:var(--rust-bg);color:var(--rust);}
+  .badge.นัดสัมภาษณ์{background:#E4EEE9;color:var(--forest-dark);}
+
+  table.staff-table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:900px;}
+  table.staff-table th, table.staff-table td{
+    border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;
+  }
+  table.staff-table th{background:var(--paper-2);font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:11px;text-transform:uppercase;}
+  table.staff-table select, table.staff-table input[type=text], table.staff-table textarea{
+    font-size:12px;padding:5px 6px;min-width:110px;
+  }
+  table.staff-table textarea{min-height:40px;}
+  button.small{
+    font-family:'Inter',sans-serif;font-size:12px;font-weight:600;
+    background:var(--forest);color:var(--white);border:none;
+    padding:6px 12px;border-radius:6px;cursor:pointer;
+  }
+  button.small.danger{background:var(--rust);}
+  button.small:disabled{opacity:0.5;cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -355,16 +389,40 @@
     </form>
   </section>
 
-  <!-- VIEW PANEL (info only, no longer a live list) -->
+  <!-- VIEW PANEL -->
   <section class="panel" id="viewPanel" style="display:none;">
-    <div class="info-box">
-      <strong>ใบสมัครทุกใบที่ถูกส่งจากฟอร์มนี้จะถูกบันทึกลง Google Sheet โดยตรง</strong> ไม่ได้เก็บไว้ในหน้าเว็บนี้ วิธีดูข้อมูลที่มีคนส่งเข้ามา:
-      <ol>
-        <li>เปิด Google Sheet ที่ผูกไว้กับ Apps Script — ข้อมูลผู้สมัครแต่ละคนจะถูกเพิ่มเป็นแถวใหม่โดยอัตโนมัติในชีทชื่อ "ใบสมัคร"</li>
-        <li>ไฟล์แนบ (เรซูเม่/รูปถ่าย/เอกสาร) จะถูกเก็บไว้ใน Google Drive โฟลเดอร์ "ใบสมัครงาน - ไฟล์แนบ" แยกเป็นโฟลเดอร์ย่อยตามเลขที่ใบสมัคร พร้อมลิงก์อยู่ในคอลัมน์สุดท้ายของชีท</li>
-        <li>เนื่องจากเป็น Google Sheet ปกติ จึงกรอง เรียงลำดับ ค้นหา หรือส่งออกเป็น Excel/CSV ได้ทันทีโดยไม่ต้องใช้ฐานข้อมูลเพิ่มเติม</li>
-      </ol>
-      หากยังไม่เห็นข้อมูลเข้ามา ให้ตรวจสอบว่าตั้งค่า Web app URL ใน <code>SHEET_ENDPOINT</code> ถูกต้อง และ Deploy แบบ "Who has access: Anyone" แล้ว
+    <div class="section-label">ตรวจสอบใบสมัครของฉัน</div>
+    <p class="sub" style="margin-bottom:14px;">กรอกเบอร์โทรศัพท์หรืออีเมลที่ใช้ตอนสมัคร เพื่อดูสถานะใบสมัครของตัวเอง</p>
+    <div class="field">
+      <label>เบอร์โทรศัพท์ หรือ อีเมล</label>
+      <input type="text" id="lookupContact" placeholder="เช่น 0812345678 หรือ name@email.com">
+    </div>
+    <div class="submit-row">
+      <button type="button" class="primary" id="lookupBtn">ค้นหาใบสมัครของฉัน</button>
+      <span class="status-msg" id="lookupStatus"></span>
+    </div>
+    <div id="lookupResults"></div>
+
+    <div class="section-label" style="margin-top:2.5rem;">สำหรับเจ้าหน้าที่ / แอดมิน</div>
+    <div id="staffLoginBox">
+      <div class="field">
+        <label>รหัสผ่าน</label>
+        <input type="password" id="staffPassword" placeholder="กรอกรหัสผ่านเจ้าหน้าที่หรือแอดมิน">
+      </div>
+      <div class="submit-row">
+        <button type="button" class="primary" id="staffLoginBtn">เข้าสู่ระบบ</button>
+        <span class="status-msg" id="staffLoginStatus"></span>
+      </div>
+    </div>
+
+    <div id="staffPanel" style="display:none;">
+      <div class="submit-row" style="margin-bottom:1rem;">
+        <span class="status-msg" id="staffRoleLabel"></span>
+        <button type="button" class="small" id="staffRefreshBtn">รีเฟรชข้อมูล</button>
+        <button type="button" class="small danger" id="staffLogoutBtn">ออกจากระบบ</button>
+        <span class="status-msg" id="staffPanelStatus"></span>
+      </div>
+      <div id="staffTableWrap" style="overflow-x:auto;"></div>
     </div>
   </section>
 </div>
@@ -372,8 +430,11 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let selectedFiles = [];
+const STATUS_OPTIONS = ['รอพิจารณา', 'นัดสัมภาษณ์', 'ผ่านการพิจารณา', 'ไม่ผ่านการพิจารณา'];
+let staffSession = { password: null, role: null };
+
 // วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzk1XmXvmdZqN-j0q_T83nNmWoicGEBJpjlOecLvzaV2Z0n3fwec6YWupTbQCzYp_Pw/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx2usJiwYn6ECvEjPaLBft7DNx755sYpFeLYx8AIjUASytA_BSqbbmth5Lyiq6Lon1T/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -423,6 +484,238 @@ function setBannerHtml(className, message){
   banner.innerHTML = '<span class="msg">' + message + '</span>';
 }
 setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
+
+// ================= ตรวจสอบใบสมัครของตัวเอง (ผู้สมัคร) =================
+$('lookupBtn').addEventListener('click', async () => {
+  const contact = $('lookupContact').value.trim();
+  const statusEl = $('lookupStatus');
+  const resultsEl = $('lookupResults');
+  resultsEl.innerHTML = '';
+  if(!contact){
+    statusEl.textContent = 'กรุณากรอกเบอร์โทรศัพท์หรืออีเมล';
+    statusEl.className = 'status-msg err';
+    return;
+  }
+  statusEl.textContent = 'กำลังค้นหา...';
+  statusEl.className = 'status-msg';
+  $('lookupBtn').disabled = true;
+  try{
+    const url = SHEET_ENDPOINT + '?action=lookup&contact=' + encodeURIComponent(contact);
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.status !== 'ok'){
+      statusEl.textContent = data.message || 'ไม่พบใบสมัครที่ตรงกับข้อมูลนี้';
+      statusEl.className = 'status-msg err';
+      $('lookupBtn').disabled = false;
+      return;
+    }
+    statusEl.textContent = 'พบ ' + data.results.length + ' ใบสมัคร';
+    statusEl.className = 'status-msg ok';
+    data.results.forEach(r => {
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      const dateStr = r.date ? new Date(r.date).toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'}) : '-';
+      card.innerHTML = `
+        <p><strong>เลขที่ใบสมัคร:</strong> ${escapeHtml(r.receiptNo)}</p>
+        <p><strong>ชื่อ:</strong> ${escapeHtml(r.name)} — <strong>ตำแหน่ง:</strong> ${escapeHtml(r.position)}</p>
+        <p><strong>วันที่ยื่น:</strong> ${dateStr}</p>
+        <p><strong>สถานะ:</strong> <span class="badge ${escapeHtml(r.status||'รอพิจารณา')}">${escapeHtml(r.status||'รอพิจารณา')}</span></p>
+        ${r.notes ? '<p><strong>หมายเหตุจากผู้ดูแล:</strong> '+escapeHtml(r.notes)+'</p>' : ''}
+      `;
+      resultsEl.appendChild(card);
+    });
+  }catch(err){
+    statusEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+    statusEl.className = 'status-msg err';
+  }
+  $('lookupBtn').disabled = false;
+});
+
+// ================= เข้าสู่ระบบเจ้าหน้าที่ / แอดมิน =================
+$('staffLoginBtn').addEventListener('click', async () => {
+  const pw = $('staffPassword').value;
+  const statusEl = $('staffLoginStatus');
+  if(!pw){
+    statusEl.textContent = 'กรุณากรอกรหัสผ่าน';
+    statusEl.className = 'status-msg err';
+    return;
+  }
+  statusEl.textContent = 'กำลังเข้าสู่ระบบ...';
+  statusEl.className = 'status-msg';
+  $('staffLoginBtn').disabled = true;
+  try{
+    const url = SHEET_ENDPOINT + '?action=list&password=' + encodeURIComponent(pw);
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.status !== 'ok'){
+      statusEl.textContent = data.message || 'เข้าสู่ระบบไม่สำเร็จ';
+      statusEl.className = 'status-msg err';
+      $('staffLoginBtn').disabled = false;
+      return;
+    }
+    staffSession = { password: pw, role: data.role };
+    $('staffLoginBox').style.display = 'none';
+    $('staffPanel').style.display = 'block';
+    $('staffRoleLabel').textContent = 'เข้าสู่ระบบในฐานะ: ' + (data.role === 'admin' ? 'แอดมิน (แก้ไข/ลบได้ทุกอย่าง)' : 'เจ้าหน้าที่ (แก้ได้เฉพาะสถานะ/หมายเหตุ)');
+    $('staffRoleLabel').className = 'status-msg ok';
+    renderStaffTable(data.results);
+  }catch(err){
+    statusEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+    statusEl.className = 'status-msg err';
+  }
+  $('staffLoginBtn').disabled = false;
+});
+
+$('staffLogoutBtn').addEventListener('click', () => {
+  staffSession = { password: null, role: null };
+  $('staffPanel').style.display = 'none';
+  $('staffLoginBox').style.display = 'block';
+  $('staffPassword').value = '';
+  $('staffLoginStatus').textContent = '';
+  $('staffTableWrap').innerHTML = '';
+});
+
+$('staffRefreshBtn').addEventListener('click', async () => {
+  const statusEl = $('staffPanelStatus');
+  statusEl.textContent = 'กำลังรีเฟรช...';
+  statusEl.className = 'status-msg';
+  try{
+    const url = SHEET_ENDPOINT + '?action=list&password=' + encodeURIComponent(staffSession.password);
+    const res = await fetch(url);
+    const data = await res.json();
+    if(data.status !== 'ok'){
+      statusEl.textContent = data.message || 'รีเฟรชไม่สำเร็จ';
+      statusEl.className = 'status-msg err';
+      return;
+    }
+    renderStaffTable(data.results);
+    statusEl.textContent = 'อัปเดตล่าสุดแล้ว';
+    statusEl.className = 'status-msg ok';
+  }catch(err){
+    statusEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+    statusEl.className = 'status-msg err';
+  }
+});
+
+function renderStaffTable(results){
+  const wrap = $('staffTableWrap');
+  if(!results.length){
+    wrap.innerHTML = '<p class="sub">ยังไม่มีใบสมัครเข้ามา</p>';
+    return;
+  }
+  const isAdmin = staffSession.role === 'admin';
+  const table = document.createElement('table');
+  table.className = 'staff-table';
+  const headCols = ['เลขที่ใบสมัคร','ชื่อ-นามสกุล','เบอร์โทร','อีเมล','ตำแหน่ง','สถานะ','หมายเหตุ', isAdmin ? 'จัดการ' : ''];
+  table.innerHTML = '<thead><tr>' + headCols.map(h=>`<th>${h}</th>`).join('') + '</tr></thead>';
+  const tbody = document.createElement('tbody');
+
+  results.forEach(r => {
+    const tr = document.createElement('tr');
+
+    const statusSelect = `<select data-field="status">${STATUS_OPTIONS.map(s=>`<option value="${s}" ${s===r.status?'selected':''}>${s}</option>`).join('')}</select>`;
+    const notesInput = `<textarea data-field="notes">${escapeHtml(r.notes||'')}</textarea>`;
+
+    if(isAdmin){
+      tr.innerHTML = `
+        <td>${escapeHtml(r.receiptNo)}</td>
+        <td><input type="text" data-field="ชื่อ-นามสกุล" value="${escapeHtml(r.name)}"></td>
+        <td><input type="text" data-field="เบอร์โทรศัพท์" value="${escapeHtml(r.phone)}"></td>
+        <td><input type="text" data-field="อีเมล" value="${escapeHtml(r.email)}"></td>
+        <td><input type="text" data-field="ตำแหน่งที่สมัคร" value="${escapeHtml(r.position)}"></td>
+        <td>${statusSelect}</td>
+        <td>${notesInput}</td>
+        <td>
+          <button type="button" class="small" data-act="save">บันทึก</button>
+          <button type="button" class="small danger" data-act="delete">ลบ</button>
+        </td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${escapeHtml(r.receiptNo)}</td>
+        <td>${escapeHtml(r.name)}</td>
+        <td>${escapeHtml(r.phone)}</td>
+        <td>${escapeHtml(r.email)}</td>
+        <td>${escapeHtml(r.position)}</td>
+        <td>${statusSelect}</td>
+        <td>${notesInput}</td>
+        <td><button type="button" class="small" data-act="save">บันทึก</button></td>
+      `;
+    }
+
+    tr.querySelector('[data-act="save"]').addEventListener('click', () => saveRow(tr, r, isAdmin));
+    const delBtn = tr.querySelector('[data-act="delete"]');
+    if(delBtn) delBtn.addEventListener('click', () => deleteRow(r));
+
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  wrap.innerHTML = '';
+  wrap.appendChild(table);
+}
+
+async function saveRow(tr, original, isAdmin){
+  const statusEl = $('staffPanelStatus');
+  const payload = { action: 'update', password: staffSession.password, receiptNo: original.receiptNo };
+
+  if(isAdmin){
+    const fields = {};
+    tr.querySelectorAll('[data-field]').forEach(el => {
+      if(el.tagName === 'SELECT') fields['สถานะ'] = el.value;
+      else if(el.dataset.field === 'notes') fields['หมายเหตุ'] = el.value;
+      else fields[el.dataset.field] = el.value;
+    });
+    payload.fields = fields;
+  } else {
+    tr.querySelectorAll('[data-field]').forEach(el => {
+      if(el.dataset.field === 'status') payload.status = el.value;
+      if(el.dataset.field === 'notes') payload.notes = el.value;
+    });
+  }
+
+  statusEl.textContent = 'กำลังบันทึก...';
+  statusEl.className = 'status-msg';
+  try{
+    const res = await fetch(SHEET_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    statusEl.textContent = data.status === 'ok' ? 'บันทึกแล้ว: ' + original.receiptNo : (data.message || 'บันทึกไม่สำเร็จ');
+    statusEl.className = 'status-msg ' + (data.status === 'ok' ? 'ok' : 'err');
+  }catch(err){
+    statusEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+    statusEl.className = 'status-msg err';
+  }
+}
+
+async function deleteRow(row){
+  if(!confirm('ยืนยันลบใบสมัครของ "' + row.name + '" (' + row.receiptNo + ') ใช่หรือไม่? ทำแล้วกู้คืนไม่ได้')) return;
+  const statusEl = $('staffPanelStatus');
+  statusEl.textContent = 'กำลังลบ...';
+  statusEl.className = 'status-msg';
+  try{
+    const res = await fetch(SHEET_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'delete', password: staffSession.password, receiptNo: row.receiptNo })
+    });
+    const data = await res.json();
+    if(data.status === 'ok'){
+      statusEl.textContent = 'ลบแล้ว: ' + row.receiptNo;
+      statusEl.className = 'status-msg ok';
+      $('staffRefreshBtn').click();
+    } else {
+      statusEl.textContent = data.message || 'ลบไม่สำเร็จ';
+      statusEl.className = 'status-msg err';
+    }
+  }catch(err){
+    statusEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+    statusEl.className = 'status-msg err';
+  }
+}
 
 function renderStatus(msg, type){
   const el = $('statusMsg');
