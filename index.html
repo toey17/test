@@ -491,11 +491,12 @@ function setBannerHtml(className, message){
   banner.className = className;
   banner.innerHTML = '<span class="msg">' + message + '</span>';
 }
-setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
+// setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
 
 // ================= ตรวจสอบใบสมัครของตัวเอง (ผู้สมัคร) =================
 $('lookupBtn').addEventListener('click', async () => {
   const contact = $('lookupContact').value.trim();
+  const fName = $('lookupfName');
   const statusEl = $('lookupStatus');
   const resultsEl = $('lookupResults');
   resultsEl.innerHTML = '';
