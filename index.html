@@ -32,7 +32,7 @@
     font-family:'Inter',sans-serif;
     line-height:1.6;
   }
-  .wrap{max-width:820px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
+  .wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
   header.top{margin-bottom:1.75rem;}
   .eyebrow{
     font-family:'IBM Plex Mono',monospace;
@@ -288,7 +288,7 @@
 <div class="wrap">
   <header class="top">
     <p class="eyebrow">ระบบรับสมัครงาน</p>
-    <h1>แบบฟอร์มสมัครพนักงานใหม่</h1>
+    <h1>แฟ้มใบสมัครงาน</h1>
     <p class="sub">กรอกแบบฟอร์มเพื่อสมัครงาน แนบเอกสารประกอบ ระบบจะส่งใบสมัครไปยังอีเมลของผู้ดูแลระบบทันที</p>
     <div class="storage-banner" id="storageBanner"></div>
   </header>
@@ -314,7 +314,7 @@
         </div>
         <div class="field" id="wrap_fPhone">
           <label>เบอร์โทรศัพท์<span class="req">*</span></label>
-          <input type="text" id="fPhone">
+          <input type="tel" id="fPhone">
           <div class="field-error">กรุณากรอกเบอร์โทรศัพท์</div>
         </div>
         <div class="field" id="wrap_fEmail">
@@ -433,8 +433,8 @@ let selectedFiles = [];
 const STATUS_OPTIONS = ['รอพิจารณา', 'นัดสัมภาษณ์', 'ผ่านการพิจารณา', 'ไม่ผ่านการพิจารณา'];
 let staffSession = { password: null, role: null };
 
-// วาง Web app URL google sheets
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzX7knU7Rlke85miURJfk3vStB2tCviPYKx9NJxXrkoK8iuFmxt6y7Y08uVFhPhvldg/exec';
+// วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx2usJiwYn6ECvEjPaLBft7DNx755sYpFeLYx8AIjUASytA_BSqbbmth5Lyiq6Lon1T/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -483,7 +483,7 @@ function setBannerHtml(className, message){
   banner.className = className;
   banner.innerHTML = '<span class="msg">' + message + '</span>';
 }
-//setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
+setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
 
 // ================= ตรวจสอบใบสมัครของตัวเอง (ผู้สมัคร) =================
 $('lookupBtn').addEventListener('click', async () => {
