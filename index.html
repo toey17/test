@@ -32,7 +32,7 @@
     font-family:'Inter',sans-serif;
     line-height:1.6;
   }
-  .wrap{max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
+  .wrap{max-width:1400px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
   header.top{margin-bottom:1.75rem;}
   .eyebrow{
     font-family:'IBM Plex Mono',monospace;
@@ -266,7 +266,7 @@
   .badge.ไม่ผ่านการพิจารณา{background:var(--rust-bg);color:var(--rust);}
   .badge.นัดสัมภาษณ์{background:#E4EEE9;color:var(--forest-dark);}
 
-  table.staff-table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:900px;}
+  table.staff-table{border-collapse:collapse;width:100%;font-size:12.5px;min-width:1000px;}
   table.staff-table th, table.staff-table td{
     border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;
   }
@@ -282,6 +282,14 @@
   }
   button.small.danger{background:var(--rust);}
   button.small:disabled{opacity:0.5;cursor:not-allowed;}
+  button.small.ghost{background:var(--paper-2);color:var(--forest);border:1px solid var(--line);}
+  tr.detail-row{display:none;}
+  tr.detail-row.show{display:table-row;}
+  tr.detail-row td{background:var(--paper-2);padding:14px 18px;}
+  .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 24px;font-size:12.5px;}
+  .detail-grid .d-item strong{display:block;font-size:11px;color:var(--forest);text-transform:uppercase;font-family:'IBM Plex Mono',monospace;margin-bottom:3px;}
+  .detail-grid .d-item{white-space:pre-wrap;word-break:break-word;}
+  .detail-grid .d-item a{color:var(--forest);}
 </style>
 </head>
 <body>
@@ -394,8 +402,8 @@
     <div class="section-label">ตรวจสอบใบสมัครของฉัน</div>
     <p class="sub" style="margin-bottom:14px;">กรอกเบอร์โทรศัพท์หรืออีเมลที่ใช้ตอนสมัคร เพื่อดูสถานะใบสมัครของตัวเอง</p>
     <div class="field">
-      <label>เบอร์โทรศัพท์ หรือ อีเมล</label>
-      <input type="text" id="lookupContact" placeholder="เช่น 0812345678 หรือ name@email.com">
+      <label>=ชื่อ-นามสกุล , เบอร์โทรศัพท์ หรือ อีเมล</label>
+      <input type="text" id="lookupContact" placeholder="เช่น ชื่อ-นามสกุล , 0812345678 หรือ name@email.com">
     </div>
     <div class="submit-row">
       <button type="button" class="primary" id="lookupBtn">ค้นหาใบสมัครของฉัน</button>
@@ -606,18 +614,22 @@ function renderStaffTable(results){
   const isAdmin = staffSession.role === 'admin';
   const table = document.createElement('table');
   table.className = 'staff-table';
-  const headCols = ['เลขที่ใบสมัคร','ชื่อ-นามสกุล','เบอร์โทร','อีเมล','ตำแหน่ง','สถานะ','หมายเหตุ', isAdmin ? 'จัดการ' : ''];
+  const headCols = ['','เลขที่ใบสมัคร','ชื่อ-นามสกุล','เบอร์โทร','อีเมล','ตำแหน่ง','สถานะ','หมายเหตุ', isAdmin ? 'จัดการ' : ''];
   table.innerHTML = '<thead><tr>' + headCols.map(h=>`<th>${h}</th>`).join('') + '</tr></thead>';
   const tbody = document.createElement('tbody');
+  const colCount = headCols.length;
 
-  results.forEach(r => {
+  results.forEach((r, idx) => {
     const tr = document.createElement('tr');
+    const detailId = 'detail_' + idx;
 
     const statusSelect = `<select data-field="status">${STATUS_OPTIONS.map(s=>`<option value="${s}" ${s===r.status?'selected':''}>${s}</option>`).join('')}</select>`;
     const notesInput = `<textarea data-field="notes">${escapeHtml(r.notes||'')}</textarea>`;
+    const toggleBtnHtml = `<button type="button" class="small ghost" data-act="toggle">รายละเอียด</button>`;
 
     if(isAdmin){
       tr.innerHTML = `
+        <td>${toggleBtnHtml}</td>
         <td>${escapeHtml(r.receiptNo)}</td>
         <td><input type="text" data-field="ชื่อ-นามสกุล" value="${escapeHtml(r.name)}"></td>
         <td><input type="text" data-field="เบอร์โทรศัพท์" value="${escapeHtml(r.phone)}"></td>
@@ -632,6 +644,7 @@ function renderStaffTable(results){
       `;
     } else {
       tr.innerHTML = `
+        <td>${toggleBtnHtml}</td>
         <td>${escapeHtml(r.receiptNo)}</td>
         <td>${escapeHtml(r.name)}</td>
         <td>${escapeHtml(r.phone)}</td>
@@ -647,7 +660,32 @@ function renderStaffTable(results){
     const delBtn = tr.querySelector('[data-act="delete"]');
     if(delBtn) delBtn.addEventListener('click', () => deleteRow(r));
 
+    // แถวรายละเอียด (ซ่อนไว้ก่อน กดปุ่มค่อยเปิด)
+    const detailTr = document.createElement('tr');
+    detailTr.className = 'detail-row';
+    detailTr.id = detailId;
+    const dateStr = r.date ? new Date(r.date).toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'}) : '-';
+    const filesHtml = (r.files || '').split('\n').filter(Boolean).map((url,i)=>`<a href="${escapeHtml(url)}" target="_blank" rel="noopener">ไฟล์แนบ ${i+1}</a>`).join('<br>') || '-';
+    detailTr.innerHTML = `
+      <td colspan="${colCount}">
+        <div class="detail-grid">
+          <div class="d-item"><strong>วันที่ยื่นใบสมัคร</strong>${dateStr}</div>
+          <div class="d-item"><strong>วันเกิด</strong>${escapeHtml(r.dob || '-')}</div>
+          <div class="d-item"><strong>เงินเดือนที่คาดหวัง</strong>${escapeHtml(r.salary || '-')}</div>
+          <div class="d-item"><strong>วุฒิการศึกษาสูงสุด</strong>${escapeHtml(r.education || '-')}</div>
+          <div class="d-item" style="grid-column:span 2;"><strong>ที่อยู่ปัจจุบัน</strong>${escapeHtml(r.address || '-')}</div>
+          <div class="d-item"><strong>ไฟล์แนบ</strong>${filesHtml}</div>
+          <div class="d-item" style="grid-column:span 3;"><strong>ประสบการณ์ทำงาน</strong>${escapeHtml(r.experience || '-')}</div>
+        </div>
+      </td>
+    `;
+
+    tr.querySelector('[data-act="toggle"]').addEventListener('click', () => {
+      detailTr.classList.toggle('show');
+    });
+
     tbody.appendChild(tr);
+    tbody.appendChild(detailTr);
   });
 
   table.appendChild(tbody);
