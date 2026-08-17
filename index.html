@@ -372,8 +372,8 @@
 <script>
 const $ = (id) => document.getElementById(id);
 let selectedFiles = [];
-// วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/XXXXXXXXXXXXXXXXXXXXXXXX/exec';
+// วาง Web app URL  Deploy Google Apps Script
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx2usJiwYn6ECvEjPaLBft7DNx755sYpFeLYx8AIjUASytA_BSqbbmth5Lyiq6Lon1T/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -422,7 +422,7 @@ function setBannerHtml(className, message){
   banner.className = className;
   banner.innerHTML = '<span class="msg">' + message + '</span>';
 }
-setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
+// setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
 
 function renderStatus(msg, type){
   const el = $('statusMsg');
