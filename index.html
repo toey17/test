@@ -496,7 +496,7 @@ function setBannerHtml(className, message){
 // ================= ตรวจสอบใบสมัครของตัวเอง (ผู้สมัคร) =================
 $('lookupBtn').addEventListener('click', async () => {
   const contact = $('lookupContact').value.trim();
-  const fName = $('lookupfName');
+  const name = $('lookupfName').value.trim();
   const statusEl = $('lookupStatus');
   const resultsEl = $('lookupResults');
   resultsEl.innerHTML = '';
