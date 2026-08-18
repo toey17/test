@@ -374,11 +374,10 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
           <label>เงินเดือนที่คาดหวัง</label>
           <input type="text" id="fSalary" placeholder="เช่น 20,000 บาท">
         </div>
-        <div class="field" id="wrap_fEducation">
+         <div class="field" id="wrap_fEducation">
           <label>วุฒิการศึกษาสูงสุด</label>
           <select id="fEducation">
             <option value="">— เลือกวุฒิการศึกษา —</option>
-            <option>ต่ำกว่ามัธยมศึกษา</option>
             <option>มัธยมศึกษาตอนต้น</option>
             <option>มัธยมศึกษาตอนปลาย</option>
             <option>อนุปริญญา</option>
@@ -484,7 +483,7 @@ const STATUS_OPTIONS = ['รอพิจารณา', 'นัดสัมภา
 let staffSession = { password: null, role: null };
 
 // วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxBEj6ic2iHMCsE4xzkSpEpGuyhA0RxjMGQrlNx7ik71zfr1ys6B4yT6Ncf3qvAlGfG/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx2usJiwYn6ECvEjPaLBft7DNx755sYpFeLYx8AIjUASytA_BSqbbmth5Lyiq6Lon1T/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -538,7 +537,7 @@ function setBannerHtml(className, message){
   banner.className = className;
   banner.innerHTML = '<span class="msg">' + message + '</span>';
 }
-// setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
+setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
 
 // ================= เปิดดูไฟล์แนบในหน้าเว็บ (ไม่เปิดแท็บใหม่) =================
 function openFilePreview(url){
