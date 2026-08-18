@@ -401,7 +401,7 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
 
       <div class="section-label">เอกสารแนบ</div>
       <div class="field">
-        <label>แนบเรซูเม่ / รูปถ่าย / เอกสารอื่นๆ (ไฟล์ละไม่เกิน 8 MB)</label>
+        <label>แนบเรซูเม่ / รูปถ่าย / เอกสารอื่นๆ (ไฟล์ละไม่เกิน 15 MB)</label>
         <div class="dropzone" id="dropzone">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <p>คลิกเพื่อเลือกไฟล์ หรือรูปภาพ (PDF, JPG, PNG, DOCX)</p>
@@ -427,7 +427,7 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
   <!-- VIEW PANEL -->
   <section class="panel" id="viewPanel" style="display:none;">
     <div class="section-label">ตรวจสอบใบสมัครของฉัน</div>
-    <p class="sub" style="margin-bottom:14px;">กรอกชื่อ-นามสกุล พร้อมเบอร์โทรศัพท์หรืออีเมลที่ใช้ตอนสมัคร เพื่อดูและแก้ไขใบสมัครของตัวเอง</p>
+    <p class="sub" style="margin-bottom:14px;">กรอกชื่อ-นามสกุล หรือ เบอร์โทรศัพท์/อีเมลที่ใช้ตอนสมัคร อย่างใดอย่างหนึ่ง เพื่อดูใบสมัครของตัวเอง (การแก้ไขข้อมูล/แนบเอกสารเพิ่มเติม ต้องกรอกเบอร์โทรหรืออีเมลเพื่อยืนยันตัวตนด้วย)</p>
     <div class="grid2">
       <div class="field">
         <label>ชื่อ-นามสกุล</label>
@@ -461,6 +461,9 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
         <span class="status-msg" id="staffRoleLabel"></span>
         <button type="button" class="small" id="staffRefreshBtn">รีเฟรชข้อมูล</button>
         <button type="button" class="small danger" id="staffLogoutBtn">ออกจากระบบ</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);">
+          <input type="checkbox" id="autoSaveToggle"> บันทึกอัตโนมัติ (แก้แล้วเซฟทันที ไม่ต้องกดปุ่มบันทึก)
+        </label>
         <span class="status-msg" id="staffPanelStatus"></span>
       </div>
       <div id="staffTableWrap" style="overflow-x:auto;"></div>
@@ -483,7 +486,7 @@ const STATUS_OPTIONS = ['รอพิจารณา', 'นัดสัมภา
 let staffSession = { password: null, role: null };
 
 // วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyQFaSUxMlle_UUlpJfjr3MygZOOF87pgybPXj-Z8LWZvKPpY58x_wootAh5IwZk9sM/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw4AztsCu4qrKar7O3rZifcLTtRfbMx-FOFUZQeJT2Ri9_GgTMLzWG0Od5-kx8Vr_uz/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -511,8 +514,8 @@ $('fEducation').addEventListener('change', (e)=>{
 $('dropzone').onclick = () => $('fFiles').click();
 $('fFiles').addEventListener('change', (e)=>{
   for(const f of e.target.files){
-    if(f.size > 8*1024*1024){
-      renderStatus('ไฟล์ "'+f.name+'" มีขนาดเกิน 8 MB กรุณาเลือกไฟล์ที่เล็กลง', 'err');
+    if(f.size > 15*1024*1024){
+      renderStatus('ไฟล์ "'+f.name+'" มีขนาดเกิน 15 MB กรุณาเลือกไฟล์ที่เล็กลง', 'err');
       continue;
     }
     selectedFiles.push(f);
@@ -537,7 +540,7 @@ function setBannerHtml(className, message){
   banner.className = className;
   banner.innerHTML = '<span class="msg">' + message + '</span>';
 }
-setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
+// setBannerHtml('storage-banner ok', 'เชื่อมต่อกับ Google Sheets แล้ว — ใบสมัครจะถูกบันทึกลงชีทและไฟล์แนบจะถูกเก็บใน Google Drive ทันทีที่กดส่ง');
 
 // ================= เปิดดูไฟล์แนบในหน้าเว็บ (ไม่เปิดแท็บใหม่) =================
 function openFilePreview(url){
@@ -565,8 +568,8 @@ $('lookupBtn').addEventListener('click', async () => {
   const statusEl = $('lookupStatus');
   const resultsEl = $('lookupResults');
   resultsEl.innerHTML = '';
-  if(!name || !contact){
-    statusEl.textContent = 'กรุณากรอกทั้งชื่อ-นามสกุล และเบอร์โทรศัพท์หรืออีเมล';
+  if(!name && !contact){
+    statusEl.textContent = 'กรุณากรอกชื่อ-นามสกุล หรือ เบอร์โทรศัพท์/อีเมล อย่างน้อยหนึ่งอย่าง';
     statusEl.className = 'status-msg err';
     return;
   }
@@ -651,7 +654,7 @@ function toggleApplicantEdit(card, r, contact){
     <div class="field"><label>ประสบการณ์ทำงาน</label><textarea data-f="ประสบการณ์ทำงาน">${escapeHtml(r.experience==='-'?'':(r.experience||''))}</textarea></div>
     <div class="field">
       <label>แนบเอกสารเพิ่มเติม (ไม่ลบไฟล์เดิม)</label>
-      <div class="dropzone" data-act="pickFile"><p>คลิกเพื่อเลือกไฟล์เพิ่มเติม (ไฟล์ละไม่เกิน 8 MB)</p></div>
+      <div class="dropzone" data-act="pickFile"><p>คลิกเพื่อเลือกไฟล์เพิ่มเติม (ไฟล์ละไม่เกิน 15 MB)</p></div>
       <input type="file" multiple style="display:none;" data-act="fileInput">
       <div class="filelist" data-act="fileListBox"></div>
     </div>
@@ -666,8 +669,8 @@ function toggleApplicantEdit(card, r, contact){
   fileInput.addEventListener('change', (e) => {
     const statusEl = box.querySelector('[data-act="editStatus"]');
     for(const f of e.target.files){
-      if(f.size > 8*1024*1024){
-        statusEl.textContent = 'ไฟล์ "'+f.name+'" มีขนาดเกิน 8 MB';
+      if(f.size > 15*1024*1024){
+        statusEl.textContent = 'ไฟล์ "'+f.name+'" มีขนาดเกิน 15 MB';
         statusEl.className = 'status-msg err';
         continue;
       }
@@ -836,6 +839,13 @@ function renderStaffTable(results){
     tr.querySelector('[data-act="save"]').addEventListener('click', () => saveRow(tr, r, isAdmin));
     const delBtn = tr.querySelector('[data-act="delete"]');
     if(delBtn) delBtn.addEventListener('click', () => deleteRow(r));
+
+    if($('autoSaveToggle').checked){
+      tr.querySelectorAll('[data-field]').forEach(el => {
+        const evt = el.tagName === 'SELECT' ? 'change' : 'blur';
+        el.addEventListener(evt, () => saveRow(tr, r, isAdmin));
+      });
+    }
 
     // แถวรายละเอียด (ซ่อนไว้ก่อน กดปุ่มค่อยเปิด)
     const detailTr = document.createElement('tr');
