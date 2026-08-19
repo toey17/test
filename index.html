@@ -129,7 +129,7 @@
   input[type=text], input[type=tel], input[type=email], input[type=date], input[type=number], select, textarea{
     width:100%;
     font-family:'Inter',sans-serif;
-    font-size:14px;
+    font-size:16px;
     padding:10px 12px;
     border:1px solid var(--line);
     border-radius:8px;
@@ -284,6 +284,13 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
   button.small.danger{background:var(--rust);}
   button.small:disabled{opacity:0.5;cursor:not-allowed;}
   button.small.ghost{background:var(--paper-2);color:var(--forest);border:1px solid var(--line);}
+
+  @media (max-width:560px){
+    button.primary{width:100%;padding:14px 24px;font-size:15px;}
+    button.small{padding:10px 16px;font-size:13px;}
+    .dropzone{padding:1.75rem 1rem;}
+    nav.tabs button{padding:12px 14px 14px;font-size:13.5px;}
+  }
   tr.detail-row{display:none;}
   tr.detail-row.show{display:table-row;}
   tr.detail-row td{background:var(--paper-2);padding:14px 18px;}
@@ -302,6 +309,25 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
     border:none;padding:6px 14px;border-radius:6px;cursor:pointer;
     font-family:'Inter',sans-serif;font-size:13px;font-weight:600;
   }
+
+  .progress-bar{
+    margin-top:10px;height:8px;border-radius:20px;background:var(--paper-2);
+    border:1px solid var(--line);overflow:hidden;
+  }
+  .progress-bar-fill{
+    height:100%;width:0%;background:var(--forest);border-radius:20px;
+    transition:width .2s ease;
+  }
+
+  .privacy-modal{display:none;position:fixed;inset:0;background:rgba(32,48,43,0.75);z-index:999;align-items:center;justify-content:center;padding:2rem;}
+  .privacy-modal.show{display:flex;}
+  .privacy-modal-inner{
+    background:var(--white);border-radius:var(--radius);width:100%;max-width:640px;
+    max-height:85vh;overflow-y:auto;padding:1.75rem;
+  }
+  .privacy-modal-inner h2{font-family:'Fraunces',serif;font-size:20px;margin:0 0 12px;}
+  .privacy-modal-inner p, .privacy-modal-inner li{font-size:13.5px;color:var(--ink);margin:0 0 8px;}
+  .privacy-modal-inner ul{padding-left:1.2em;margin:0 0 12px;}
 </style>
 </head>
 <body>
@@ -374,15 +400,14 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
           <label>เงินเดือนที่คาดหวัง</label>
           <input type="text" id="fSalary" placeholder="เช่น 20,000 บาท">
         </div>
-         <div class="field" id="wrap_fEducation">
+        <div class="field" id="wrap_fEducation">
           <label>วุฒิการศึกษาสูงสุด</label>
           <select id="fEducation">
             <option value="">— เลือกวุฒิการศึกษา —</option>
+            <option>ต่ำกว่ามัธยมศึกษา</option>
             <option>มัธยมศึกษาตอนต้น</option>
-            <option>มัธยมศึกษาตอนปลาย</option>
-            <option>อนุปริญญา</option>
-            <option>ประกาศนียบัตรวิชาชีพ(ปวช)</option>
-            <option>ประกาศนียบัตรวิชาชีพขั้นสูง(ปวส)</option>
+            <option>มัธยมศึกษาตอนปลาย / ปวช.</option>
+            <option>ปวส. / อนุปริญญา</option>
             <option>ปริญญาตรี</option>
             <option>ปริญญาโท</option>
             <option>ปริญญาเอก</option>
@@ -401,13 +426,25 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
 
       <div class="section-label">เอกสารแนบ</div>
       <div class="field">
-        <label>แนบเรซูเม่ / รูปถ่าย / เอกสารอื่นๆ (ไฟล์ละไม่เกิน 15 MB)</label>
+        <label>แนบเรซูเม่ / รูปถ่าย / เอกสารอื่นๆ</label>
         <div class="dropzone" id="dropzone">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <p>คลิกเพื่อเลือกไฟล์ หรือรูปภาพ (PDF, JPG, PNG, DOCX)</p>
+          <p>คลิกเพื่อเลือกไฟล์ รองรับ PDF, JPG, PNG, DOC, DOCX</p>
+          <p style="margin-top:2px;">ไฟล์ละไม่เกิน 15 MB — แนบได้หลายไฟล์</p>
         </div>
         <input type="file" id="fFiles" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none;">
         <div class="filelist" id="filelist"></div>
+        <div class="progress-bar" id="uploadProgressBar" style="display:none;">
+          <div class="progress-bar-fill" id="uploadProgressFill"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;">
+          <input type="checkbox" id="fConsent" style="width:auto;margin-top:3px;">
+          <span>ข้าพเจ้ายินยอมให้จัดเก็บและใช้ข้อมูลที่กรอกในแบบฟอร์มนี้ (รวมถึงเอกสารแนบ) เพื่อวัตถุประสงค์ในการพิจารณาสมัครงานเท่านั้น ตามที่ระบุใน<a href="#" id="privacyLinkInline">นโยบายความเป็นส่วนตัว</a></span>
+        </label>
+        <div class="field-error" id="consentError" style="display:none;">กรุณายอมรับนโยบายความเป็นส่วนตัวก่อนส่งใบสมัคร</div>
       </div>
 
       <div class="submit-row">
@@ -419,7 +456,7 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
         <div class="stamp" id="receiptNo"></div>
         <p id="receiptName"></p>
         <p id="receiptDate"></p>
-        <p>ใบสมัครนี้ถูกส่งไปยังผู้ดูแลระบบเรียบร้อยแล้ว จะมีการติดต่อกลับหากผ่านการพิจารณาเบื้องต้น</p>
+        <p>ใบสมัครนี้ถูกส่งเข้าระบบเรียบร้อยแล้ว ระบบได้ส่งอีเมลยืนยันพร้อมเลขที่ใบสมัครไปที่อีเมลที่ท่านกรอกไว้ ท่านสามารถกลับมาตรวจสอบสถานะหรือแก้ไขข้อมูลได้ทุกเมื่อที่แท็บ "วิธีดูใบสมัครที่ส่งมา"</p>
       </div>
     </form>
   </section>
@@ -479,14 +516,44 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
   </div>
 </div>
 
+<!-- นโยบายความเป็นส่วนตัว -->
+<div class="privacy-modal" id="privacyModal">
+  <div class="privacy-modal-inner">
+    <h2>นโยบายความเป็นส่วนตัว</h2>
+    <p>ระบบรับสมัครงานนี้เก็บข้อมูลที่ท่านกรอก (ชื่อ วันเกิด เบอร์โทรศัพท์ อีเมล ที่อยู่ ข้อมูลการศึกษาและประสบการณ์ทำงาน) และเอกสารแนบ เพื่อวัตถุประสงค์ในการพิจารณาสมัครงานเท่านั้น</p>
+    <ul>
+      <li><strong>ที่จัดเก็บข้อมูล:</strong> ข้อมูลถูกบันทึกใน Google Sheets และไฟล์แนบถูกเก็บใน Google Drive ขององค์กร ไม่ได้เผยแพร่สู่สาธารณะ</li>
+      <li><strong>การเข้ารหัสระหว่างส่งข้อมูล:</strong> ข้อมูลถูกส่งผ่านการเชื่อมต่อ HTTPS ที่เข้ารหัสตลอดเส้นทาง ทั้งจากเบราว์เซอร์ของท่านไปยังระบบ และจากระบบไปยัง Google</li>
+      <li><strong>ผู้เข้าถึงข้อมูล:</strong> เฉพาะเจ้าหน้าที่/แอดมินที่มีรหัสผ่านเข้าสู่ระบบเท่านั้นที่ดูรายการใบสมัครทั้งหมดได้ ผู้สมัครดูได้เฉพาะใบสมัครของตัวเอง</li>
+      <li><strong>การแก้ไข/ลบข้อมูล:</strong> ท่านสามารถขอแก้ไขหรือขอให้ลบข้อมูลของท่านได้ โดยติดต่อผู้ดูแลระบบโดยตรง</li>
+      <li><strong>ระยะเวลาจัดเก็บ:</strong> ข้อมูลจะถูกเก็บไว้ตามระยะเวลาที่องค์กรกำหนดสำหรับกระบวนการสรรหาบุคลากร</li>
+    </ul>
+    <p>การกดยอมรับและส่งใบสมัคร ถือว่าท่านรับทราบและยินยอมตามนโยบายนี้</p>
+    <div class="submit-row">
+      <button type="button" class="primary" id="privacyModalClose">ปิดหน้าต่างนี้</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const $ = (id) => document.getElementById(id);
 let selectedFiles = [];
+let formDirty = false;
 const STATUS_OPTIONS = ['รอพิจารณา', 'นัดสัมภาษณ์', 'ผ่านการพิจารณา', 'ไม่ผ่านการพิจารณา'];
 let staffSession = { password: null, role: null };
 
+// ================= เตือนก่อนออกจากหน้า ถ้ากรอกฟอร์มค้างไว้ยังไม่ได้ส่ง =================
+$('appForm').addEventListener('input', () => { formDirty = true; });
+$('appForm').addEventListener('change', () => { formDirty = true; });
+window.addEventListener('beforeunload', (e) => {
+  if(!formDirty) return;
+  e.preventDefault();
+  e.returnValue = '';
+  return '';
+});
+
 // วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw4AztsCu4qrKar7O3rZifcLTtRfbMx-FOFUZQeJT2Ri9_GgTMLzWG0Od5-kx8Vr_uz/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwIwVe-CEMPM8uloLnESrOHdH1ENppbSXx4nH170cJSQeZRcD_ucVzacFgtdFTrC2wt/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -559,6 +626,18 @@ $('fileModal').addEventListener('click', (e) => {
     $('fileModal').classList.remove('show');
     $('fileModalFrame').src = '';
   }
+});
+
+// ================= นโยบายความเป็นส่วนตัว =================
+$('privacyLinkInline').addEventListener('click', (e) => {
+  e.preventDefault();
+  $('privacyModal').classList.add('show');
+});
+$('privacyModalClose').addEventListener('click', () => {
+  $('privacyModal').classList.remove('show');
+});
+$('privacyModal').addEventListener('click', (e) => {
+  if(e.target.id === 'privacyModal') $('privacyModal').classList.remove('show');
 });
 
 // ================= ตรวจสอบใบสมัครของตัวเอง (ผู้สมัคร) =================
@@ -983,9 +1062,27 @@ function fileToBase64(file){
   });
 }
 
+function postJsonWithProgress(url, payload, onProgress){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
+    xhr.upload.onprogress = (e) => {
+      if(e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      try{ resolve(JSON.parse(xhr.responseText)); }
+      catch(err){ reject(new Error('อ่านผลลัพธ์จากเซิร์ฟเวอร์ไม่สำเร็จ')); }
+    };
+    xhr.onerror = () => reject(new Error('การเชื่อมต่อผิดพลาด'));
+    xhr.send(JSON.stringify(payload));
+  });
+}
+
 async function handleSubmit(e){
   if(e && e.preventDefault) e.preventDefault();
   clearAllFieldErrors();
+  $('consentError').style.display = 'none';
 
   const name = $('fName').value.trim();
   const phone = $('fPhone').value.trim();
@@ -1018,7 +1115,16 @@ async function handleSubmit(e){
     return;
   }
 
+  if(!$('fConsent').checked){
+    $('consentError').style.display = 'block';
+    renderStatus('กรุณายอมรับนโยบายความเป็นส่วนตัวก่อนส่งใบสมัคร', 'err');
+    $('fConsent').scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+
   $('submitBtn').disabled = true;
+  $('uploadProgressBar').style.display = 'block';
+  $('uploadProgressFill').style.width = '0%';
   renderStatus('กำลังส่งใบสมัคร...', '');
 
   try{
@@ -1029,11 +1135,11 @@ async function handleSubmit(e){
     // แปลงไฟล์แนบทั้งหมดเป็น base64 ก่อนส่ง (Apps Script รับเป็น JSON)
     const filesPayload = [];
     for(const f of selectedFiles){
-      renderStatus('กำลังแปลงไฟล์ "'+f.name+'"...', '');
+      renderStatus('กำลังเตรียมไฟล์ "'+f.name+'"...', '');
       const base64 = await fileToBase64(f);
       filesPayload.push({ name: f.name, mimeType: f.type || 'application/octet-stream', data: base64 });
     }
-    renderStatus('กำลังส่งใบสมัคร...', '');
+    renderStatus('กำลังอัปโหลด... 0%', '');
 
     const payload = {
       receiptNo,
@@ -1049,19 +1155,20 @@ async function handleSubmit(e){
       files: filesPayload
     };
 
-    // ใช้ Content-Type: text/plain เพื่อเลี่ยง CORS preflight ที่ Apps Script ไม่รองรับ
-    const res = await fetch(SHEET_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
+    const data = await postJsonWithProgress(SHEET_ENDPOINT, payload, (pct) => {
+      $('uploadProgressFill').style.width = pct + '%';
+      renderStatus('กำลังอัปโหลด... ' + pct + '%', '');
     });
 
-    const data = await res.json();
+    $('uploadProgressBar').style.display = 'none';
+
     if(data.status !== 'ok'){
       renderStatus('ส่งใบสมัครไม่สำเร็จ: ' + (data.message || 'เกิดข้อผิดพลาดไม่ทราบสาเหตุ'), 'err');
       $('submitBtn').disabled = false;
       return;
     }
+
+    formDirty = false; // ส่งสำเร็จแล้ว ไม่ต้องเตือนก่อนออกจากหน้าอีก
 
     renderStatus('ส่งใบสมัครเรียบร้อยแล้ว', 'ok');
     $('receiptNo').textContent = receiptNo;
@@ -1074,8 +1181,10 @@ async function handleSubmit(e){
     selectedFiles = [];
     renderFileList();
     $('otherPosWrap').style.display = 'none';
+    $('otherEduWrap').style.display = 'none';
     clearAllFieldErrors();
   }catch(err){
+    $('uploadProgressBar').style.display = 'none';
     renderStatus('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message, 'err');
   }
   $('submitBtn').disabled = false;
