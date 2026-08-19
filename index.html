@@ -404,11 +404,10 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
           <label>วุฒิการศึกษาสูงสุด</label>
           <select id="fEducation">
             <option value="">— เลือกวุฒิการศึกษา —</option>
+            <option>ต่ำกว่ามัธยมศึกษา</option>
             <option>มัธยมศึกษาตอนต้น</option>
-            <option>มัธยมศึกษาตอนปลาย</option>
-            <option>อนุปริญญา</option>
-            <option>ประกาศนียบัตรวิชาชีพ(ปวช)</option>
-            <option>ประกาศนียบัตรวิชาชีพขั้นสูง(ปวส)</option>
+            <option>มัธยมศึกษาตอนปลาย / ปวช.</option>
+            <option>ปวส. / อนุปริญญา</option>
             <option>ปริญญาตรี</option>
             <option>ปริญญาโท</option>
             <option>ปริญญาเอก</option>
@@ -554,7 +553,7 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwIwVe-CEMPM8uloLnESrOHdH1ENppbSXx4nH170cJSQeZRcD_ucVzacFgtdFTrC2wt/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx2usJiwYn6ECvEjPaLBft7DNx755sYpFeLYx8AIjUASytA_BSqbbmth5Lyiq6Lon1T/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -687,7 +686,7 @@ function renderApplicantCard(resultsEl, r, contact){
     <p><strong>เลขที่ใบสมัคร:</strong> ${escapeHtml(r.receiptNo)}</p>
     <p><strong>ชื่อ-นามสกุล:</strong> ${escapeHtml(r.name)}</p>
     <p><strong>วันเกิด:</strong> ${escapeHtml(r.dob || '-')}</p>
-    <p><strong>เบอร์โทรศัพท์:</strong> ${escapeHtml(r.phone)}</p>
+    <p><strong>เบอร์โทรศัพท์:</strong> ${escapeHtml(formatPhoneDisplay(r.phone))}</p>
     <p><strong>อีเมล:</strong> ${escapeHtml(r.email)}</p>
     <p><strong>ที่อยู่:</strong> ${escapeHtml(r.address || '-')}</p>
     <p><strong>ตำแหน่งที่สมัคร:</strong> ${escapeHtml(r.position)}</p>
@@ -1027,6 +1026,13 @@ function renderStatus(msg, type){
   const el = $('statusMsg');
   el.textContent = msg;
   el.className = 'status-msg' + (type ? ' '+type : '');
+}
+
+function formatPhoneDisplay(phone){
+  const digits = String(phone || '').replace(/\D/g, '');
+  if(digits.length === 10) return digits.slice(0,3) + '-' + digits.slice(3,6) + '-' + digits.slice(6);
+  if(digits.length === 9) return digits.slice(0,2) + '-' + digits.slice(2,5) + '-' + digits.slice(5);
+  return phone || '-';
 }
 
 function escapeHtml(s){
