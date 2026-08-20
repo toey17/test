@@ -404,10 +404,11 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
           <label>วุฒิการศึกษาสูงสุด</label>
           <select id="fEducation">
             <option value="">— เลือกวุฒิการศึกษา —</option>
-            <option>ต่ำกว่ามัธยมศึกษา</option>
             <option>มัธยมศึกษาตอนต้น</option>
-            <option>มัธยมศึกษาตอนปลาย / ปวช.</option>
-            <option>ปวส. / อนุปริญญา</option>
+            <option>มัธยมศึกษาตอนปลาย</option>
+            <option>อนุปริญญา</option>
+            <option>ประกาศนียบัตรวิชาชีพ(ปวช)</option>
+            <option>ประกาศนียบัตรวิชาชีพขั้นสูง(ปวส)</option>
             <option>ปริญญาตรี</option>
             <option>ปริญญาโท</option>
             <option>ปริญญาเอก</option>
@@ -553,7 +554,7 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzw41b9E9deeexO0PXfR0lCcvvjX-qQUKoxpC7py8r4F_ZCs4PtnQ91QITcMJYeaN9LkA/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyOPqxzcLhUInRGXZUdDJ8QvJikUKV49DHpcPAzBdhEYfq1vJJf6tQYCdsqehjuMpdv/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -1098,21 +1099,29 @@ function fileToBase64(file){
   });
 }
 
-function postJsonWithProgress(url, payload, onProgress){
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', url, true);
-    xhr.setRequestHeader('Content-Type', 'text/plain;charset=utf-8');
-    xhr.upload.onprogress = (e) => {
-      if(e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
-    };
-    xhr.onload = () => {
-      try{ resolve(JSON.parse(xhr.responseText)); }
-      catch(err){ reject(new Error('อ่านผลลัพธ์จากเซิร์ฟเวอร์ไม่สำเร็จ')); }
-    };
-    xhr.onerror = () => reject(new Error('การเชื่อมต่อผิดพลาด'));
-    xhr.send(JSON.stringify(payload));
+// หมายเหตุ: ห้ามใช้ xhr.upload.onprogress กับ endpoint นี้ — การดักฟัง upload progress
+// จะบังคับให้เบราว์เซอร์ส่ง CORS preflight (OPTIONS) ซึ่ง Google Apps Script ไม่รองรับ
+// ทำให้ request ถูกบล็อกไปเลย จึงใช้ fetch() ธรรมดา + จำลองแถบความคืบหน้าแทน
+function startFakeProgress(fillEl, onTick){
+  let pct = 0;
+  const timer = setInterval(() => {
+    pct = Math.min(pct + Math.random() * 8 + 2, 90);
+    fillEl.style.width = pct + '%';
+    if(onTick) onTick(Math.round(pct));
+  }, 250);
+  return () => {
+    clearInterval(timer);
+    fillEl.style.width = '100%';
+  };
+}
+
+async function postJsonSimple(url, payload){
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
   });
+  return res.json();
 }
 
 async function handleSubmit(e){
@@ -1162,6 +1171,7 @@ async function handleSubmit(e){
   $('uploadProgressBar').style.display = 'block';
   $('uploadProgressFill').style.width = '0%';
   renderStatus('กำลังส่งใบสมัคร...', '');
+  let stopProgress = null;
 
   try{
     const now = new Date();
@@ -1191,11 +1201,13 @@ async function handleSubmit(e){
       files: filesPayload
     };
 
-    const data = await postJsonWithProgress(SHEET_ENDPOINT, payload, (pct) => {
-      $('uploadProgressFill').style.width = pct + '%';
+    const stopProgressFn = startFakeProgress($('uploadProgressFill'), (pct) => {
       renderStatus('กำลังอัปโหลด... ' + pct + '%', '');
     });
+    stopProgress = stopProgressFn;
 
+    const data = await postJsonSimple(SHEET_ENDPOINT, payload);
+    stopProgress();
     $('uploadProgressBar').style.display = 'none';
 
     if(data.status !== 'ok'){
@@ -1220,6 +1232,7 @@ async function handleSubmit(e){
     $('otherEduWrap').style.display = 'none';
     clearAllFieldErrors();
   }catch(err){
+    if(stopProgress) stopProgress();
     $('uploadProgressBar').style.display = 'none';
     renderStatus('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + err.message, 'err');
   }
