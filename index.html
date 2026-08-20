@@ -469,7 +469,7 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
     <div class="grid2">
       <div class="field">
         <label>ชื่อ-นามสกุล</label>
-        <input type="text" id="lookupName" placeholder="ชื่อ-นามสกุลที่ใช้ตอนสมัคร">
+        <input type="text" id="lookupName" placeholder="เช่น ศิริชัย สุขนา (ต้องกรอกทั้งชื่อและนามสกุล)">
       </div>
       <div class="field">
         <label>เบอร์โทรศัพท์ หรือ อีเมล</label>
@@ -554,7 +554,7 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyj2pyDaoeNnulEyS7PrE0Nx9NaPicYBnG4tJnqmMA-WGyIOsbypFJ-WqVQG9cj523B/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzRsCvwXyfcQq-TguhxoG0qnwyqvZkKFXCGtRPEv_O1M9Ll6fM4W6JJ-aQ5-fgTAtRa/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -652,6 +652,14 @@ $('lookupBtn').addEventListener('click', async () => {
     statusEl.textContent = 'กรุณากรอกชื่อ-นามสกุล หรือ เบอร์โทรศัพท์/อีเมล อย่างน้อยหนึ่งอย่าง';
     statusEl.className = 'status-msg err';
     return;
+  }
+  if(name){
+    const nameParts = name.split(/\s+/).filter(Boolean);
+    if(nameParts.length < 2){
+      statusEl.textContent = 'กรุณากรอกทั้งชื่อและนามสกุล (เช่น ศิริชัย สุขนา) เพื่อป้องกันไม่ให้เห็นข้อมูลของคนอื่นที่ชื่อคล้ายกัน';
+      statusEl.className = 'status-msg err';
+      return;
+    }
   }
   statusEl.textContent = 'กำลังค้นหา...';
   statusEl.className = 'status-msg';
