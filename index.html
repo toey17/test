@@ -400,10 +400,8 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
           <label>เงินเดือนที่คาดหวัง</label>
           <input type="text" id="fSalary" placeholder="เช่น 20,000 บาท">
         </div>
-         <div class="field" id="wrap_fEducation">
-          <label>วุฒิการศึกษาสูงสุด</label>
-          <select id="fEducation">
-            <option value="">— เลือกวุฒิการศึกษา —</option>
+        <div class="field" id="wrap_fEducation">
+          <option value="">— เลือกวุฒิการศึกษา —</option>
             <option>มัธยมศึกษาตอนต้น</option>
             <option>มัธยมศึกษาตอนปลาย</option>
             <option>อนุปริญญา</option>
@@ -554,7 +552,7 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzPhq6H9qVFuUB_JuaIzxTRGk_HxyOK-jM5MU7-Yn-411pEK2SPl--ATJiN1txhIXt_mw/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzw41b9E9deeexO0PXfR0lCcvvjX-qQUKoxpC7py8r4F_ZCs4PtnQ91QITcMJYeaN9LkA/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -961,7 +959,22 @@ function renderStaffTable(results){
   wrap.appendChild(table);
 }
 
-async function saveRow(tr, original, isAdmin){
+let saveQueue = Promise.resolve();
+
+function saveRow(tr, original, isAdmin){
+  const saveBtn = tr.querySelector('[data-act="save"]');
+  if(saveBtn) saveBtn.disabled = true;
+
+  // เข้าคิวทีละแถว กันยิง request หลายสิบตัวพร้อมกันจนหลุด (Failed to fetch)
+  saveQueue = saveQueue
+    .then(() => doSaveRow(tr, original, isAdmin))
+    .catch(() => {}) // ไม่ให้แถวหนึ่งพังแล้วทำให้คิวที่เหลือหยุดไปด้วย
+    .then(() => { if(saveBtn) saveBtn.disabled = false; });
+
+  return saveQueue;
+}
+
+async function doSaveRow(tr, original, isAdmin, isRetry){
   const statusEl = $('staffPanelStatus');
   const payload = { action: 'update', password: staffSession.password, receiptNo: original.receiptNo };
 
@@ -980,7 +993,7 @@ async function saveRow(tr, original, isAdmin){
     });
   }
 
-  statusEl.textContent = 'กำลังบันทึก...';
+  statusEl.textContent = 'กำลังบันทึก ' + original.receiptNo + '...';
   statusEl.className = 'status-msg';
   try{
     const res = await fetch(SHEET_ENDPOINT, {
@@ -989,18 +1002,28 @@ async function saveRow(tr, original, isAdmin){
       body: JSON.stringify(payload)
     });
     const data = await res.json();
-    statusEl.textContent = data.status === 'ok' ? 'บันทึกแล้ว: ' + original.receiptNo : (data.message || 'บันทึกไม่สำเร็จ');
+    statusEl.textContent = data.status === 'ok' ? 'บันทึกแล้ว: ' + original.receiptNo : (data.message || 'บันทึกไม่สำเร็จ: ' + original.receiptNo);
     statusEl.className = 'status-msg ' + (data.status === 'ok' ? 'ok' : 'err');
   }catch(err){
-    statusEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+    if(!isRetry){
+      // เชื่อมต่อหลุดกลางทาง ลองซ้ำอีกครั้งอัตโนมัติหลังจากรอสักครู่
+      await new Promise(r => setTimeout(r, 800));
+      return doSaveRow(tr, original, isAdmin, true);
+    }
+    statusEl.textContent = 'บันทึกไม่สำเร็จ (' + original.receiptNo + '): ' + err.message + ' — ลองกดปุ่มบันทึกอีกครั้ง';
     statusEl.className = 'status-msg err';
   }
 }
 
-async function deleteRow(row){
+function deleteRow(row){
   if(!confirm('ยืนยันลบใบสมัครของ "' + row.name + '" (' + row.receiptNo + ') ใช่หรือไม่? ทำแล้วกู้คืนไม่ได้')) return;
+  saveQueue = saveQueue.then(() => doDeleteRow(row)).catch(() => {});
+  return saveQueue;
+}
+
+async function doDeleteRow(row, isRetry){
   const statusEl = $('staffPanelStatus');
-  statusEl.textContent = 'กำลังลบ...';
+  statusEl.textContent = 'กำลังลบ ' + row.receiptNo + '...';
   statusEl.className = 'status-msg';
   try{
     const res = await fetch(SHEET_ENDPOINT, {
@@ -1014,11 +1037,15 @@ async function deleteRow(row){
       statusEl.className = 'status-msg ok';
       $('staffRefreshBtn').click();
     } else {
-      statusEl.textContent = data.message || 'ลบไม่สำเร็จ';
+      statusEl.textContent = data.message || ('ลบไม่สำเร็จ: ' + row.receiptNo);
       statusEl.className = 'status-msg err';
     }
   }catch(err){
-    statusEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+    if(!isRetry){
+      await new Promise(r => setTimeout(r, 800));
+      return doDeleteRow(row, true);
+    }
+    statusEl.textContent = 'ลบไม่สำเร็จ (' + row.receiptNo + '): ' + err.message + ' — ลองกดปุ่มลบอีกครั้ง';
     statusEl.className = 'status-msg err';
   }
 }
