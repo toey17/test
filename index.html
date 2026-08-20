@@ -469,7 +469,7 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
     <div class="grid2">
       <div class="field">
         <label>ชื่อ-นามสกุล</label>
-        <input type="text" id="lookupName" placeholder=" กรอกทั้งชื่อและนามสกุล">
+        <input type="text" id="lookupName" placeholder="เช่น ศิริชัย สุขนา (ต้องกรอกทั้งชื่อและนามสกุล)">
       </div>
       <div class="field">
         <label>เบอร์โทรศัพท์ หรือ อีเมล</label>
@@ -554,7 +554,7 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzRsCvwXyfcQq-TguhxoG0qnwyqvZkKFXCGtRPEv_O1M9Ll6fM4W6JJ-aQ5-fgTAtRa/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwrZy1Jus30DJJdIr7YNbf0FNk4aHq4RCHM9zZS19HoHmLvAjQJ_JKfkFlQ8SXRzvoM/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -725,6 +725,9 @@ function toggleApplicantEdit(card, r, contact){
   if(box.dataset.built){ return; }
   box.dataset.built = '1';
   card._newFiles = [];
+  card._removeFiles = [];
+
+  const existingFileUrls = (r.files || '').split('\n').filter(Boolean);
 
   box.innerHTML = `
     <div class="grid2">
@@ -741,7 +744,11 @@ function toggleApplicantEdit(card, r, contact){
     </div>
     <div class="field"><label>ประสบการณ์ทำงาน</label><textarea data-f="ประสบการณ์ทำงาน">${escapeHtml(r.experience==='-'?'':(r.experience||''))}</textarea></div>
     <div class="field">
-      <label>แนบเอกสารเพิ่มเติม (ไม่ลบไฟล์เดิม)</label>
+      <label>ไฟล์แนบปัจจุบัน</label>
+      <div class="filelist" data-act="existingFileList"></div>
+    </div>
+    <div class="field">
+      <label>แนบเอกสารเพิ่มเติม</label>
       <div class="dropzone" data-act="pickFile"><p>คลิกเพื่อเลือกไฟล์เพิ่มเติม (ไฟล์ละไม่เกิน 15 MB)</p></div>
       <input type="file" multiple style="display:none;" data-act="fileInput">
       <div class="filelist" data-act="fileListBox"></div>
@@ -751,6 +758,8 @@ function toggleApplicantEdit(card, r, contact){
       <span class="status-msg" data-act="editStatus"></span>
     </div>
   `;
+
+  renderExistingFileList(box, card, existingFileUrls);
 
   const fileInput = box.querySelector('[data-act="fileInput"]');
   box.querySelector('[data-act="pickFile"]').addEventListener('click', () => fileInput.click());
@@ -769,6 +778,27 @@ function toggleApplicantEdit(card, r, contact){
   });
 
   box.querySelector('[data-act="submitEdit"]').addEventListener('click', () => submitApplicantEdit(box, card, r, contact));
+}
+
+function renderExistingFileList(box, card, fileUrls){
+  const el = box.querySelector('[data-act="existingFileList"]');
+  el.innerHTML = '';
+  if(!fileUrls.length){
+    el.innerHTML = '<p class="sub" style="margin:0;">ยังไม่มีไฟล์แนบ</p>';
+    return;
+  }
+  fileUrls.forEach((url, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'filechip';
+    chip.innerHTML = `<span class="name file-link">ไฟล์แนบ ${i+1} (ดูไฟล์)</span><button type="button">ลบไฟล์นี้</button>`;
+    chip.querySelector('.file-link').addEventListener('click', () => openFilePreview(url));
+    chip.querySelector('button').addEventListener('click', () => {
+      if(!confirm('ยืนยันลบไฟล์แนบนี้ออกจากใบสมัคร? การลบนี้ถาวร กู้คืนไม่ได้')) return;
+      card._removeFiles.push(url);
+      chip.remove();
+    });
+    el.appendChild(chip);
+  });
 }
 
 function renderCardFileList(box, card){
@@ -801,14 +831,21 @@ async function submitApplicantEdit(box, card, r, contact){
     const res = await fetch(SHEET_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'applicantUpdate', receiptNo: r.receiptNo, contact, fields, files: filesPayload })
+      body: JSON.stringify({
+        action: 'applicantUpdate',
+        receiptNo: r.receiptNo,
+        contact,
+        fields,
+        files: filesPayload,
+        removeFiles: card._removeFiles || []
+      })
     });
     const data = await res.json();
     if(data.status === 'ok'){
-      statusEl.textContent = 'บันทึกการแก้ไขเรียบร้อยแล้ว';
+      statusEl.textContent = 'บันทึกการแก้ไขเรียบร้อยแล้ว กำลังรีเฟรชข้อมูล...';
       statusEl.className = 'status-msg ok';
-      card._newFiles = [];
-      renderCardFileList(box, card);
+      // รีเฟรชผลลัพธ์ทั้งหมดด้วยการค้นหาใหม่ ให้เห็นข้อมูลล่าสุดทันที
+      $('lookupBtn').click();
     } else {
       statusEl.textContent = data.message || 'บันทึกไม่สำเร็จ';
       statusEl.className = 'status-msg err';
