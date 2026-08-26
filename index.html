@@ -656,7 +656,7 @@ $('lookupBtn').addEventListener('click', async () => {
   if(name){
     const nameParts = name.split(/\s+/).filter(Boolean);
     if(nameParts.length < 2){
-      statusEl.textContent = 'กรุณากรอกทั้งชื่อและนามสกุล (เช่น ศิริชัย สุขนา) เพื่อป้องกันไม่ให้เห็นข้อมูลของคนอื่นที่ชื่อคล้ายกัน';
+      statusEl.textContent = 'กรุณากรอกทั้งชื่อและนามสกุล เพื่อป้องกันไม่ให้เห็นข้อมูลของคนอื่นที่ชื่อคล้ายกัน';
       statusEl.className = 'status-msg err';
       return;
     }
