@@ -715,7 +715,7 @@ $('lookupBtn').addEventListener('click', async () => {
     const res = await fetch(url);
     const data = await res.json();
     if(data.status !== 'ok'){
-      statusEl.textContent = data.message || 'ไม่พบใบสมัครที่ตรงกับข้อมูลนี้';
+      statusEl.textContent = data.message || 'ไม่พบใบสมัครที่ตรงกับข้อมูลนี้ (กรุณาตรวจสอบข้อมูลให้ถูกต้อง)';
       statusEl.className = 'status-msg err';
       $('lookupBtn').disabled = false;
       return;
