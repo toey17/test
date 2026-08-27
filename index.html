@@ -328,6 +328,12 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
   .privacy-modal-inner h2{font-family:'Fraunces',serif;font-size:20px;margin:0 0 12px;}
   .privacy-modal-inner p, .privacy-modal-inner li{font-size:13.5px;color:var(--ink);margin:0 0 8px;}
   .privacy-modal-inner ul{padding-left:1.2em;margin:0 0 12px;}
+
+  .confirm-modal{display:none;position:fixed;inset:0;background:rgba(32,48,43,0.75);z-index:1000;align-items:center;justify-content:center;padding:2rem;}
+  .confirm-modal.show{display:flex;}
+  .confirm-modal-inner{background:var(--white);border-radius:var(--radius);width:100%;max-width:420px;padding:1.5rem;}
+  .confirm-modal-inner p{font-size:14px;color:var(--ink);margin:0 0 18px;white-space:pre-wrap;line-height:1.5;}
+  .confirm-modal-actions{display:flex;justify-content:flex-end;gap:8px;}
 </style>
 </head>
 <body>
@@ -469,7 +475,7 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
     <div class="grid2">
       <div class="field">
         <label>ชื่อ-นามสกุล</label>
-        <input type="text" id="lookupName" placeholder="(ต้องกรอกทั้งชื่อและนามสกุล)">
+        <input type="text" id="lookupName" placeholder= กรอกทั้งชื่อและนามสกุล">
       </div>
       <div class="field">
         <label>เบอร์โทรศัพท์ หรือ อีเมล</label>
@@ -532,6 +538,17 @@ table.staff-table td .action-cell{display:flex;gap:8px;flex-wrap:wrap;}
     <p>การกดยอมรับและส่งใบสมัคร ถือว่าท่านรับทราบและยินยอมตามนโยบายนี้</p>
     <div class="submit-row">
       <button type="button" class="primary" id="privacyModalClose">ปิดหน้าต่างนี้</button>
+    </div>
+  </div>
+</div>
+
+<!-- กล่องยืนยันแบบกำหนดเอง (ใช้แทน confirm() ของเบราว์เซอร์) -->
+<div class="confirm-modal" id="confirmModal">
+  <div class="confirm-modal-inner">
+    <p id="confirmModalMessage"></p>
+    <div class="confirm-modal-actions">
+      <button type="button" class="small ghost" id="confirmModalCancel">ยกเลิก</button>
+      <button type="button" class="small danger" id="confirmModalOk">ยืนยัน</button>
     </div>
   </div>
 </div>
@@ -641,7 +658,36 @@ $('privacyModal').addEventListener('click', (e) => {
   if(e.target.id === 'privacyModal') $('privacyModal').classList.remove('show');
 });
 
+// ================= หน้าต่างยืนยันแบบกำหนดเอง (แทน confirm() ของเบราว์เซอร์) =================
+function customConfirm(message){
+  return new Promise((resolve) => {
+    $('confirmModalMessage').textContent = message;
+    $('confirmModal').classList.add('show');
+    const okBtn = $('confirmModalOk');
+    const cancelBtn = $('confirmModalCancel');
+    const cleanup = () => {
+      $('confirmModal').classList.remove('show');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+    };
+    const onOk = () => { cleanup(); resolve(true); };
+    const onCancel = () => { cleanup(); resolve(false); };
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+  });
+}
+
 // ================= ตรวจสอบใบสมัครของตัวเอง (ผู้สมัคร) =================
+// กด Enter ในช่องค้นหาแทนการกดปุ่มได้
+['lookupName', 'lookupContact'].forEach(id => {
+  $(id).addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      $('lookupBtn').click();
+    }
+  });
+});
+
 $('lookupBtn').addEventListener('click', async () => {
   const name = $('lookupName').value.trim();
   const contact = $('lookupContact').value.trim();
@@ -778,6 +824,17 @@ function toggleApplicantEdit(card, r, contact){
   });
 
   box.querySelector('[data-act="submitEdit"]').addEventListener('click', () => submitApplicantEdit(box, card, r, contact));
+
+  // กด Enter ในช่องกรอก (ยกเว้น textarea) แทนการกดปุ่มบันทึกการแก้ไข
+  box.querySelectorAll('[data-f]').forEach(el => {
+    if(el.tagName === 'TEXTAREA') return;
+    el.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        box.querySelector('[data-act="submitEdit"]').click();
+      }
+    });
+  });
 }
 
 function renderExistingFileList(box, card, fileUrls){
@@ -792,8 +849,9 @@ function renderExistingFileList(box, card, fileUrls){
     chip.className = 'filechip';
     chip.innerHTML = `<span class="name file-link">ไฟล์แนบ ${i+1} (ดูไฟล์)</span><button type="button">ลบไฟล์นี้</button>`;
     chip.querySelector('.file-link').addEventListener('click', () => openFilePreview(url));
-    chip.querySelector('button').addEventListener('click', () => {
-      if(!confirm('ยืนยันลบไฟล์แนบนี้ออกจากใบสมัคร? การลบนี้ถาวร กู้คืนไม่ได้')) return;
+    chip.querySelector('button').addEventListener('click', async () => {
+      const ok = await customConfirm('ยืนยันลบไฟล์แนบนี้ออกจากใบสมัคร? การลบนี้ถาวร กู้คืนไม่ได้');
+      if(!ok) return;
       card._removeFiles.push(url);
       chip.remove();
     });
@@ -857,6 +915,14 @@ async function submitApplicantEdit(box, card, r, contact){
 }
 
 // ================= เข้าสู่ระบบเจ้าหน้าที่ / แอดมิน =================
+// กด Enter ในช่องรหัสผ่านแทนการกดปุ่มเข้าสู่ระบบได้
+$('staffPassword').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    $('staffLoginBtn').click();
+  }
+});
+
 $('staffLoginBtn').addEventListener('click', async () => {
   const pw = $('staffPassword').value;
   const statusEl = $('staffLoginStatus');
@@ -965,6 +1031,17 @@ function renderStaffTable(results){
     const delBtn = tr.querySelector('[data-act="delete"]');
     if(delBtn) delBtn.addEventListener('click', () => deleteRow(r));
 
+    // กด Enter ในช่องกรอก (ยกเว้นช่องหมายเหตุ ที่ต้องเว้นไว้ให้ขึ้นบรรทัดใหม่ได้) แทนการกดปุ่มบันทึก
+    tr.querySelectorAll('[data-field]').forEach(el => {
+      if(el.tagName === 'TEXTAREA') return;
+      el.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          saveRow(tr, r, isAdmin);
+        }
+      });
+    });
+
     if($('autoSaveToggle').checked){
       tr.querySelectorAll('[data-field]').forEach(el => {
         const evt = el.tagName === 'SELECT' ? 'change' : 'blur';
@@ -1062,8 +1139,9 @@ async function doSaveRow(tr, original, isAdmin, isRetry){
   }
 }
 
-function deleteRow(row){
-  if(!confirm('ยืนยันลบใบสมัครของ "' + row.name + '" (' + row.receiptNo + ') ใช่หรือไม่? ทำแล้วกู้คืนไม่ได้')) return;
+async function deleteRow(row){
+  const ok = await customConfirm('ยืนยันลบใบสมัครของ "' + row.name + '" (' + row.receiptNo + ') ใช่หรือไม่?\nทำแล้วกู้คืนไม่ได้');
+  if(!ok) return;
   saveQueue = saveQueue.then(() => doDeleteRow(row)).catch(() => {});
   return saveQueue;
 }
