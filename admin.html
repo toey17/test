@@ -1,1 +1,26 @@
+<div class="section-label" style="margin-top:2.5rem;">สำหรับเจ้าหน้าที่ / แอดมิน</div>
+    <div id="staffLoginBox">
+      <div class="field">
+        <label>รหัสผ่าน</label>
+        <input type="password" id="staffPassword" placeholder="กรอกรหัสผ่านเจ้าหน้าที่หรือแอดมิน">
+      </div>
+      <div class="submit-row">
+        <button type="button" class="primary" id="staffLoginBtn">เข้าสู่ระบบ</button>
+        <span class="status-msg" id="staffLoginStatus"></span>
+      </div>
+    </div>
 
+    <div id="staffPanel" style="display:none;">
+      <div class="submit-row" style="margin-bottom:1rem;">
+        <span class="status-msg" id="staffRoleLabel"></span>
+        <button type="button" class="small" id="staffRefreshBtn">รีเฟรชข้อมูล</button>
+        <button type="button" class="small danger" id="staffLogoutBtn">ออกจากระบบ</button>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);">
+          <input type="checkbox" id="autoSaveToggle"> บันทึกอัตโนมัติ (แก้แล้วเซฟทันที ไม่ต้องกดปุ่มบันทึก)
+        </label>
+        <span class="status-msg" id="staffPanelStatus"></span>
+      </div>
+      <div id="staffTableWrap" style="overflow-x:auto;"></div>
+    </div>
+  </section>
+</div>
