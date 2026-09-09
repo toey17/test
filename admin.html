@@ -155,7 +155,19 @@
   @media print{
     body *{visibility:hidden;}
     #appModalBody, #appModalBody *{visibility:visible;}
-    #appModalBody{position:absolute;left:0;top:0;width:100%;}
+    .app-modal, .app-modal-inner{
+      position:static !important;
+      display:block !important;
+      overflow:visible !important;
+      max-height:none !important;
+      height:auto !important;
+      width:100% !important;
+      max-width:none !important;
+      padding:0 !important;
+      background:none !important;
+      inset:auto !important;
+    }
+    #appModalBody{position:static;width:100%;}
     .no-print{display:none !important;}
   }
 
@@ -241,13 +253,16 @@
 <div class="app-modal" id="appModal">
   <div class="app-modal-inner">
     <div class="app-modal-actions no-print">
-      <button type="button" class="small ghost" id="appModalPrint">🖨️ พิมพ์ / ดาวน์โหลด PDF</button>
+      <button type="button" class="small ghost" id="appModalPrint">🖨️ พิมพ์</button>
+      <button type="button" class="small" id="appModalDownload">⬇️ ดาวน์โหลด PDF</button>
       <button type="button" class="small danger" id="appModalClose">✕ ปิด</button>
     </div>
     <div id="appModalBody"></div>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const STATUS_OPTIONS = ['รอพิจารณา', 'นัดสัมภาษณ์', 'ผ่านการพิจารณา', 'ไม่ผ่านการพิจารณา'];
@@ -373,7 +388,10 @@ $('staffRefreshBtn').addEventListener('click', async () => {
 });
 
 // ================= ป๊อปอัพใบสมัครแบบเต็ม (ดูรายละเอียด + พิมพ์/ดาวน์โหลด PDF) =================
+let currentModalRecord = null;
+
 function openApplicationModal(r){
+  currentModalRecord = r;
   const dateStr = r.date ? new Date(r.date).toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'}) : '-';
   const fileUrls = (r.files || '').split('\n').filter(Boolean);
   const filesHtml = fileUrls.length
@@ -443,6 +461,52 @@ $('appModal').addEventListener('click', (e) => {
 $('appModalPrint').addEventListener('click', () => {
   window.print();
 });
+
+$('appModalDownload').addEventListener('click', () => {
+  if(currentModalRecord) downloadApplicationPDF(currentModalRecord);
+});
+
+async function downloadApplicationPDF(r){
+  const btn = $('appModalDownload');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'กำลังสร้าง PDF...';
+
+  try{
+    const canvas = await html2canvas($('appModalBody'), { scale: 2, backgroundColor: '#ffffff' });
+    const imgData = canvas.toDataURL('image/png');
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
+
+    while(heightLeft > 0){
+      position = heightLeft - imgHeight;
+      pdf.addPage();
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    const safeName = (r.name || 'ใบสมัคร').replace(/\s+/g, '');
+    pdf.save('ใบสมัคร_' + safeName + '_' + r.receiptNo + '.pdf');
+  }catch(err){
+    const statusEl = $('staffPanelStatus');
+    statusEl.textContent = 'สร้าง PDF ไม่สำเร็จ: ' + err.message;
+    statusEl.className = 'status-msg err';
+  }
+
+  btn.disabled = false;
+  btn.textContent = originalText;
+}
 
 function renderStaffTable(results){
   const wrap = $('staffTableWrap');
