@@ -33,7 +33,16 @@
     line-height:1.6;
   }
   .wrap{max-width:1400px;margin:0 auto;padding:2.5rem 1.5rem 5rem;}
-  header.top{margin-bottom:1.75rem;}
+  header.top{margin-bottom:1.75rem;position:relative;}
+  .top-inner{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+  .login-btn{
+    font-family:'Inter',sans-serif;font-weight:600;font-size:13px;
+    background:var(--white);color:var(--forest);border:1px solid var(--line-strong);
+    padding:9px 18px;border-radius:8px;cursor:pointer;text-decoration:none;
+    white-space:nowrap;display:inline-flex;align-items:center;gap:6px;
+  }
+  .login-btn:hover{background:var(--paper-2);}
+  @media (max-width:560px){ .login-btn{padding:8px 14px;font-size:12.5px;} }
   .eyebrow{
     font-family:'IBM Plex Mono',monospace;
     font-size:12px;
@@ -296,9 +305,17 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <p class="eyebrow">ระบบรับสมัครงาน</p>
-    <h1>แฟ้มใบสมัครงาน</h1>
-    <p class="sub">กรอกแบบฟอร์มเพื่อสมัครงาน แนบเอกสารประกอบ ระบบจะส่งใบสมัครไปยังอีเมลของผู้ดูแลระบบทันที</p>
+    <div class="top-inner">
+      <div>
+        <p class="eyebrow">ระบบรับสมัครงาน</p>
+        <h1>แฟ้มใบสมัครงาน</h1>
+        <p class="sub">กรอกแบบฟอร์มเพื่อสมัครงาน แนบเอกสารประกอบ ระบบจะส่งใบสมัครไปยังอีเมลของผู้ดูแลระบบทันที</p>
+      </div>
+      <a href="admin.html" target="_blank" rel="noopener" class="login-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        เข้าสู่ระบบเจ้าหน้าที่ / แอดมิน
+      </a>
+    </div>
     <div class="storage-banner" id="storageBanner"></div>
   </header>
 
@@ -432,7 +449,7 @@
     <div class="grid2">
       <div class="field">
         <label>ชื่อ-นามสกุล</label>
-        <input type="text" id="lookupName" placeholder="กรอกทั้งชื่อและนามสกุล">
+        <input type="text" id="lookupName" placeholder="เช่น ศิริชัย สุขนา (ต้องกรอกทั้งชื่อและนามสกุล)">
       </div>
       <div class="field">
         <label>เบอร์โทรศัพท์ หรือ อีเมล</label>
@@ -500,8 +517,8 @@ window.addEventListener('beforeunload', (e) => {
   return '';
 });
 
-// วาง Web app URL ที่ได้จากการ Deploy Google Apps Script
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwcc2soK60xdVDylJq9IFDfoa7VvsnYN50O45VBobhDev6BDIGFPElqDwot9ymRF_0c/exec';
+// วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้ (URL เดียวกับที่ใช้ใน admin.html)
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzw41b9E9deeexO0PXfR0lCcvvjX-qQUKoxpC7py8r4F_ZCs4PtnQ91QITcMJYeaN9LkA/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
