@@ -174,6 +174,7 @@
       <div class="submit-row" style="margin-bottom:1rem;">
         <span class="status-msg" id="staffRoleLabel"></span>
         <button type="button" class="small" id="staffRefreshBtn">รีเฟรชข้อมูล</button>
+        <button type="button" class="small" id="exportCsvBtn">ดาวน์โหลดข้อมูล (CSV)</button>
         <button type="button" class="small danger" id="staffLogoutBtn">ออกจากระบบ</button>
         <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);">
           <input type="checkbox" id="autoSaveToggle" style="width:auto;"> บันทึกอัตโนมัติ (แก้แล้วเซฟทันที ไม่ต้องกดปุ่มบันทึก)
@@ -208,9 +209,10 @@
 const $ = (id) => document.getElementById(id);
 const STATUS_OPTIONS = ['รอพิจารณา', 'นัดสัมภาษณ์', 'ผ่านการพิจารณา', 'ไม่ผ่านการพิจารณา'];
 let staffSession = { password: null, role: null };
+let lastResults = [];
 
 // วาง Web app URL เดียวกับที่ใช้ใน job-application-form.html ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwcc2soK60xdVDylJq9IFDfoa7VvsnYN50O45VBobhDev6BDIGFPElqDwot9ymRF_0c/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzw41b9E9deeexO0PXfR0lCcvvjX-qQUKoxpC7py8r4F_ZCs4PtnQ91QITcMJYeaN9LkA/exec';
 
 // ================= เปิดดูไฟล์แนบในหน้าเว็บ (ไม่เปิดแท็บใหม่) =================
 function openFilePreview(url){
@@ -285,6 +287,7 @@ $('staffLoginBtn').addEventListener('click', async () => {
     $('staffPanel').style.display = 'block';
     $('staffRoleLabel').textContent = 'เข้าสู่ระบบในฐานะ: ' + (data.role === 'admin' ? 'แอดมิน' : 'เจ้าหน้าที่') + ' (แก้ไข/ลบได้ทุกอย่าง)';
     $('staffRoleLabel').className = 'status-msg ok';
+    lastResults = data.results;
     renderStaffTable(data.results);
   }catch(err){
     statusEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
@@ -295,6 +298,7 @@ $('staffLoginBtn').addEventListener('click', async () => {
 
 $('staffLogoutBtn').addEventListener('click', () => {
   staffSession = { password: null, role: null };
+  lastResults = [];
   $('staffPanel').style.display = 'none';
   $('staffLoginBox').style.display = 'block';
   $('staffPassword').value = '';
@@ -315,6 +319,7 @@ $('staffRefreshBtn').addEventListener('click', async () => {
       statusEl.className = 'status-msg err';
       return;
     }
+    lastResults = data.results;
     renderStaffTable(data.results);
     statusEl.textContent = 'อัปเดตล่าสุดแล้ว';
     statusEl.className = 'status-msg ok';
@@ -510,6 +515,52 @@ async function doDeleteRow(row, isRetry){
     statusEl.className = 'status-msg err';
   }
 }
+
+// ================= ดาวน์โหลดข้อมูลใบสมัครทั้งหมดเป็น CSV =================
+$('exportCsvBtn').addEventListener('click', () => {
+  const statusEl = $('staffPanelStatus');
+  if(!lastResults.length){
+    statusEl.textContent = 'ยังไม่มีข้อมูลให้ดาวน์โหลด (ลองกดรีเฟรชข้อมูลก่อน)';
+    statusEl.className = 'status-msg err';
+    return;
+  }
+
+  const headers = [
+    'วันที่/เวลาบันทึก', 'เลขที่ใบสมัคร', 'ชื่อ-นามสกุล', 'วันเกิด',
+    'เบอร์โทรศัพท์', 'อีเมล', 'ที่อยู่', 'ตำแหน่งที่สมัคร',
+    'เงินเดือนที่คาดหวัง', 'วุฒิการศึกษา', 'ประสบการณ์ทำงาน', 'ไฟล์แนบ (ลิงก์)',
+    'สถานะ', 'หมายเหตุ'
+  ];
+
+  const csvEscape = (val) => {
+    const s = String(val === undefined || val === null ? '' : val);
+    if(/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  };
+
+  const rows = lastResults.map(r => [
+    r.date ? new Date(r.date).toLocaleString('th-TH') : '',
+    r.receiptNo, r.name, r.dob, r.phone, r.email, r.address, r.position,
+    r.salary, r.education, r.experience, (r.files || '').split('\n').filter(Boolean).join(' | '),
+    r.status, r.notes
+  ]);
+
+  const csvContent = [headers, ...rows].map(row => row.map(csvEscape).join(',')).join('\r\n');
+  // ใส่ BOM นำหน้าเพื่อให้ Excel เปิดภาษาไทยได้ถูกต้อง ไม่เพี้ยน
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = 'ใบสมัครงาน_' + stamp + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  statusEl.textContent = 'ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว (' + lastResults.length + ' รายการ)';
+  statusEl.className = 'status-msg ok';
+});
 
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, (c)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
