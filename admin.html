@@ -153,26 +153,27 @@
   .app-doc .doc-item{font-size:14px;white-space:pre-wrap;word-break:break-word;}
 
   @media print{
-    body *{visibility:hidden;}
-    #appModalBody, #appModalBody *{visibility:visible;}
-    .app-modal, .app-modal-inner{
-      position:static !important;
+    .wrap, .file-modal, .confirm-modal{display:none !important;}
+    .app-modal{
       display:block !important;
-      overflow:visible !important;
-      max-height:none !important;
-      height:auto !important;
-      width:100% !important;
-      max-width:none !important;
-      padding:0 !important;
+      position:static !important;
       background:none !important;
+      padding:0 !important;
       inset:auto !important;
     }
-    #appModalBody{position:static;width:100%;}
+    .app-modal-inner{
+      position:static !important;
+      max-height:none !important;
+      overflow:visible !important;
+      padding:0 !important;
+      border:none !important;
+      box-shadow:none !important;
+    }
     .no-print{display:none !important;}
   }
 
   .file-link{color:var(--forest);font-weight:600;cursor:pointer;text-decoration:underline;}
-  .file-modal{display:none;position:fixed;inset:0;background:rgba(32,48,43,0.75);z-index:999;align-items:center;justify-content:center;padding:2rem;}
+  .file-modal{display:none;position:fixed;inset:0;background:rgba(32,48,43,0.75);z-index:1003;align-items:center;justify-content:center;padding:2rem;}
   .file-modal.show{display:flex;}
   .file-modal-inner{background:var(--white);border-radius:var(--radius);width:100%;max-width:900px;height:85vh;display:flex;flex-direction:column;overflow:hidden;}
   .file-modal-inner iframe{flex:1;border:none;width:100%;}
@@ -269,10 +270,10 @@ const STATUS_OPTIONS = ['รอพิจารณา', 'นัดสัมภา
 let staffSession = { password: null, role: null };
 let lastResults = [];
 
-// วาง Web app URL
+// วาง Web app URL ตรงนี้
 const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx5K-fbnfBR-0IqtbVr_OQZjfL0cWY6nMWZIl6ZVHyw2axpnpnYCikBEaSq0U4tNuCS/exec';
 
-// ================= เปิดดูไฟล์แนบในหน้าเว็บ (ไม่เปิดแท็บใหม่) =================
+// ================= เปิดดูไฟล์แนบในหน้าเว็บ =================
 function openFilePreview(url){
   const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
   const fileId = match ? match[1] : null;
@@ -291,7 +292,7 @@ $('fileModal').addEventListener('click', (e) => {
   }
 });
 
-// ================= หน้าต่างยืนยันแบบกำหนดเอง (แทน confirm() ของเบราว์เซอร์) =================
+// ================= หน้าต่างยืนยันแบบกำหนดเอง =================
 function customConfirm(message){
   return new Promise((resolve) => {
     $('confirmModalMessage').textContent = message;
