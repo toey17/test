@@ -57,6 +57,33 @@
   @media (max-width:560px){ .panel{padding:1.25rem;} }
 
   .field{margin-bottom:16px;max-width:360px;}
+  .edit-modal .field{max-width:none;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:560px){ .grid2{grid-template-columns:1fr;} }
+
+  .dropzone{
+    border:2px dashed var(--line);border-radius:var(--radius);padding:1.25rem;
+    text-align:center;background:var(--paper-2);cursor:pointer;transition:border-color .15s;
+  }
+  .dropzone:hover{border-color:var(--forest);}
+  .dropzone p{margin:0;font-size:13px;color:var(--ink-soft);}
+  .filelist{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+  .filechip{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--white);border:1px solid var(--line);border-radius:6px;
+    padding:6px 10px;font-size:13px;
+  }
+  .filechip .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;}
+  .filechip button{background:none;border:none;color:var(--rust);cursor:pointer;font-size:13px;font-family:'Inter',sans-serif;}
+
+  .doc-checklist{display:flex;flex-direction:column;gap:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;max-width:360px;}
+  .doc-checklist label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:400;color:var(--ink);margin-bottom:0;}
+  .doc-checklist input[type=checkbox]{width:auto;}
+
+  .edit-modal{display:none;position:fixed;inset:0;background:rgba(32,48,43,0.75);z-index:1004;align-items:center;justify-content:center;padding:2rem;}
+  .edit-modal.show{display:flex;}
+  .edit-modal-inner{background:var(--white);border-radius:var(--radius);width:100%;max-width:800px;max-height:90vh;overflow-y:auto;padding:2rem;}
+  .edit-modal-inner h2{font-family:'Fraunces',serif;font-size:20px;margin:0 0 16px;}
   .field label{
     display:block;
     font-size:13px;
@@ -153,7 +180,7 @@
   .app-doc .doc-item{font-size:14px;white-space:pre-wrap;word-break:break-word;}
 
   @media print{
-    .wrap, .file-modal, .confirm-modal{display:none !important;}
+    .wrap, .file-modal, .confirm-modal, .edit-modal{display:none !important;}
     .app-modal{
       display:block !important;
       position:static !important;
@@ -254,11 +281,20 @@
 <div class="app-modal" id="appModal">
   <div class="app-modal-inner">
     <div class="app-modal-actions no-print">
+      <button type="button" class="small ghost" id="appModalEdit">✏️ แก้ไขข้อมูลทั้งหมด</button>
       <button type="button" class="small ghost" id="appModalPrint">🖨️ พิมพ์</button>
       <button type="button" class="small" id="appModalDownload">⬇️ ดาวน์โหลด PDF</button>
       <button type="button" class="small danger" id="appModalClose">✕ ปิด</button>
     </div>
     <div id="appModalBody"></div>
+  </div>
+</div>
+
+<!-- ป๊อปอัพแก้ไขข้อมูลทั้งหมดของใบสมัคร -->
+<div class="edit-modal" id="editModal">
+  <div class="edit-modal-inner">
+    <h2>แก้ไขข้อมูลใบสมัคร</h2>
+    <div id="editModalBody"></div>
   </div>
 </div>
 
@@ -271,9 +307,9 @@ let staffSession = { password: null, role: null };
 let lastResults = [];
 
 // วาง Web app URL ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx5K-fbnfBR-0IqtbVr_OQZjfL0cWY6nMWZIl6ZVHyw2axpnpnYCikBEaSq0U4tNuCS/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyMptXlO_ZNviSydp6dK492_WxMhaRHAfoz2r3W7wV7xEKD8gMghXCNtPCe0Rdn75Y/exec';
 
-// ================= เปิดดูไฟล์แนบในหน้าเว็บ =================
+// ================= เปิดดูไฟล์แนบในหน้าเว็บ (ไม่เปิดแท็บใหม่) =================
 function openFilePreview(url){
   const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
   const fileId = match ? match[1] : null;
@@ -292,7 +328,7 @@ $('fileModal').addEventListener('click', (e) => {
   }
 });
 
-// ================= หน้าต่างยืนยันแบบกำหนดเอง =================
+// ================= หน้าต่างยืนยันแบบกำหนดเอง (แทน confirm() ของเบราว์เซอร์) =================
 function customConfirm(message){
   return new Promise((resolve) => {
     $('confirmModalMessage').textContent = message;
@@ -474,6 +510,180 @@ $('appModalDownload').addEventListener('click', () => {
   if(currentModalRecord) downloadApplicationPDF(currentModalRecord);
 });
 
+// ================= ป๊อปอัพแก้ไขข้อมูลทั้งหมดของใบสมัคร (เจ้าหน้าที่/แอดมิน) =================
+const DOC_CHECKLIST_OPTIONS = ['บัตรประชาชน','ทะเบียนบ้าน','ใบ สด.9 ','หนังสือรับรองการทำงาน','ทรานสคริปต์'];
+let editModalNewFiles = [];
+let editModalRemoveFiles = [];
+
+$('appModalEdit').addEventListener('click', () => {
+  if(currentModalRecord) openEditModal(currentModalRecord);
+});
+$('editModal').addEventListener('click', (e) => {
+  if(e.target.id === 'editModal') $('editModal').classList.remove('show');
+});
+
+function openEditModal(r){
+  editModalNewFiles = [];
+  editModalRemoveFiles = [];
+  const existingFileUrls = (r.files || '').split('\n').filter(Boolean);
+  const checkedDocs = (r.documents || '').split(',').map(s => s.trim());
+
+  $('editModalBody').innerHTML = `
+    <div class="grid2">
+      <div class="field"><label>ชื่อ-นามสกุล</label><input type="text" data-f="ชื่อ-นามสกุล" value="${escapeHtml(r.name)}"></div>
+      <div class="field"><label>วันเกิด</label><input type="date" data-f="วันเกิด" value="${escapeHtml(r.dob==='-'?'':(r.dob||''))}"></div>
+      <div class="field"><label>เบอร์โทรศัพท์</label><input type="text" data-f="เบอร์โทรศัพท์" value="${escapeHtml(r.phone)}"></div>
+      <div class="field"><label>อีเมล</label><input type="text" data-f="อีเมล" value="${escapeHtml(r.email)}"></div>
+    </div>
+    <div class="field"><label>ที่อยู่</label><textarea data-f="ที่อยู่">${escapeHtml(r.address==='-'?'':(r.address||''))}</textarea></div>
+    <div class="grid2">
+      <div class="field"><label>ตำแหน่งที่สมัคร</label><input type="text" data-f="ตำแหน่งที่สมัคร" value="${escapeHtml(r.position)}"></div>
+      <div class="field"><label>เงินเดือนที่คาดหวัง</label><input type="text" data-f="เงินเดือนที่คาดหวัง" value="${escapeHtml(r.salary==='-'?'':(r.salary||''))}"></div>
+      <div class="field"><label>วุฒิการศึกษา</label><input type="text" data-f="วุฒิการศึกษา" value="${escapeHtml(r.education==='-'?'':(r.education||''))}"></div>
+      <div class="field"><label>เกรดเฉลี่ยรวม</label><input type="text" data-f="เกรดเฉลี่ยรวม" value="${escapeHtml(r.gpa==='-'?'':(r.gpa||''))}"></div>
+      <div class="field"><label>มหาวิทยาลัยที่จบการศึกษา</label><input type="text" data-f="มหาวิทยาลัย" value="${escapeHtml(r.university==='-'?'':(r.university||''))}"></div>
+      <div class="field">
+        <label>สถานะ</label>
+        <select data-f="สถานะ">${STATUS_OPTIONS.map(s=>`<option value="${s}" ${s===r.status?'selected':''}>${s}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div class="field"><label>ประสบการณ์ทำงาน</label><textarea data-f="ประสบการณ์ทำงาน">${escapeHtml(r.experience==='-'?'':(r.experience||''))}</textarea></div>
+    <div class="field"><label>หมายเหตุ</label><textarea data-f="หมายเหตุ">${escapeHtml(r.notes||'')}</textarea></div>
+    <div class="field">
+      <label>เอกสารที่แนบมาด้วย</label>
+      <div class="doc-checklist">
+        ${DOC_CHECKLIST_OPTIONS.map(doc => `<label><input type="checkbox" class="editModalDocCheck" value="${escapeHtml(doc)}" ${checkedDocs.indexOf(doc)!==-1?'checked':''}> ${escapeHtml(doc)}</label>`).join('')}
+      </div>
+    </div>
+    <div class="field">
+      <label>ไฟล์แนบปัจจุบัน</label>
+      <div class="filelist" id="editModalExistingFiles"></div>
+    </div>
+    <div class="field">
+      <label>แนบไฟล์เพิ่มเติม</label>
+      <div class="dropzone" id="editModalDropzone"><p>คลิกเพื่อเลือกไฟล์เพิ่มเติม (ไฟล์ละไม่เกิน 15 MB)</p></div>
+      <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="display:none;" id="editModalFileInput">
+      <div class="filelist" id="editModalNewFileList"></div>
+    </div>
+    <div class="submit-row">
+      <button type="button" class="small" id="editModalSave">บันทึกการแก้ไข</button>
+      <button type="button" class="small danger" id="editModalCancel">ยกเลิก</button>
+      <span class="status-msg" id="editModalStatus"></span>
+    </div>
+  `;
+
+  renderEditModalExistingFiles(existingFileUrls);
+
+  $('editModalDropzone').addEventListener('click', () => $('editModalFileInput').click());
+  $('editModalFileInput').addEventListener('change', (e) => {
+    const statusEl = $('editModalStatus');
+    for(const f of e.target.files){
+      if(f.size > 15*1024*1024){
+        statusEl.textContent = 'ไฟล์ "'+f.name+'" มีขนาดเกิน 15 MB';
+        statusEl.className = 'status-msg err';
+        continue;
+      }
+      editModalNewFiles.push(f);
+    }
+    e.target.value = '';
+    renderEditModalNewFiles();
+  });
+
+  $('editModalSave').addEventListener('click', () => submitEditModal(r));
+  $('editModalCancel').addEventListener('click', () => $('editModal').classList.remove('show'));
+
+  $('editModal').classList.add('show');
+}
+
+function renderEditModalExistingFiles(fileUrls){
+  const el = $('editModalExistingFiles');
+  el.innerHTML = '';
+  if(!fileUrls.length){
+    el.innerHTML = '<p class="sub" style="margin:0;">ยังไม่มีไฟล์แนบ</p>';
+    return;
+  }
+  fileUrls.forEach((url, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'filechip';
+    chip.innerHTML = `<span class="name file-link">ไฟล์แนบ ${i+1} (ดูไฟล์)</span><button type="button">ลบไฟล์นี้</button>`;
+    chip.querySelector('.file-link').addEventListener('click', () => openFilePreview(url));
+    chip.querySelector('button').addEventListener('click', async () => {
+      const ok = await customConfirm('ยืนยันลบไฟล์แนบนี้ออกจากใบสมัคร? การลบนี้ถาวร กู้คืนไม่ได้');
+      if(!ok) return;
+      editModalRemoveFiles.push(url);
+      chip.remove();
+    });
+    el.appendChild(chip);
+  });
+}
+
+function renderEditModalNewFiles(){
+  const el = $('editModalNewFileList');
+  el.innerHTML = '';
+  editModalNewFiles.forEach((f, idx) => {
+    const chip = document.createElement('div');
+    chip.className = 'filechip';
+    chip.innerHTML = `<span class="name">${escapeHtml(f.name)}</span><button type="button">นำออก</button>`;
+    chip.querySelector('button').onclick = () => { editModalNewFiles.splice(idx,1); renderEditModalNewFiles(); };
+    el.appendChild(chip);
+  });
+}
+
+async function submitEditModal(r){
+  const statusEl = $('editModalStatus');
+  statusEl.textContent = 'กำลังบันทึก...';
+  statusEl.className = 'status-msg';
+
+  const fields = {};
+  $('editModalBody').querySelectorAll('[data-f]').forEach(el => { fields[el.dataset.f] = el.value.trim(); });
+  const checkedDocs = Array.from($('editModalBody').querySelectorAll('.editModalDocCheck:checked')).map(el => el.value);
+  fields['เอกสารที่แนบมาด้วย'] = checkedDocs.join(', ') || '-';
+
+  const filesPayload = [];
+  for(const f of editModalNewFiles){
+    const base64 = await fileToBase64(f);
+    filesPayload.push({ name: f.name, mimeType: f.type || 'application/octet-stream', data: base64 });
+  }
+
+  try{
+    const res = await fetch(SHEET_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'update',
+        password: staffSession.password,
+        receiptNo: r.receiptNo,
+        fields,
+        files: filesPayload,
+        removeFiles: editModalRemoveFiles
+      })
+    });
+    const data = await res.json();
+    if(data.status === 'ok'){
+      statusEl.textContent = 'บันทึกเรียบร้อยแล้ว';
+      statusEl.className = 'status-msg ok';
+      $('editModal').classList.remove('show');
+      $('appModal').classList.remove('show');
+      $('staffRefreshBtn').click();
+    } else {
+      statusEl.textContent = data.message || 'บันทึกไม่สำเร็จ';
+      statusEl.className = 'status-msg err';
+    }
+  }catch(err){
+    statusEl.textContent = 'เกิดข้อผิดพลาด: ' + err.message;
+    statusEl.className = 'status-msg err';
+  }
+}
+
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = () => reject(new Error('อ่านไฟล์ "'+file.name+'" ไม่สำเร็จ'));
+    reader.readAsDataURL(file);
+  });
+}
+
 async function downloadApplicationPDF(r){
   const btn = $('appModalDownload');
   const originalText = btn.textContent;
@@ -486,22 +696,25 @@ async function downloadApplicationPDF(r){
 
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4');
+    const margin = 12; // มม. — กันเนื้อหาชิดขอบกระดาษจนโดนตัด
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = pageWidth;
+    const usableWidth = pageWidth - margin * 2;
+    const usableHeight = pageHeight - margin * 2;
+    const imgWidth = usableWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
     let heightLeft = imgHeight;
-    let position = 0;
+    let position = margin;
 
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+    heightLeft -= usableHeight;
 
     while(heightLeft > 0){
-      position = heightLeft - imgHeight;
+      position = margin - (imgHeight - heightLeft);
       pdf.addPage();
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      pdf.addImage(imgData, 'PNG', margin, position, imgWidth, imgHeight);
+      heightLeft -= usableHeight;
     }
 
     const safeName = (r.name || 'ใบสมัคร').replace(/\s+/g, '');
