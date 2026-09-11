@@ -180,6 +180,9 @@
   .dropzone svg{color:var(--forest);}
   .dropzone p{margin:6px 0 0;font-size:13px;color:var(--ink-soft);}
   .filelist{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+  .doc-checklist{display:flex;flex-direction:column;gap:8px;background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;}
+  .doc-checklist label{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:400;color:var(--ink);margin-bottom:0;}
+  .doc-checklist input[type=checkbox]{width:auto;}
   .filechip{
     display:flex;align-items:center;justify-content:space-between;
     background:var(--white);border:1px solid var(--line);border-radius:6px;
@@ -399,6 +402,14 @@
           <label>ระบุวุฒิการศึกษา / สาขา</label>
           <input type="text" id="fEducationOther" placeholder="เช่น ปริญญาตรี สาขาวิศวกรรมคอมพิวเตอร์">
         </div>
+        <div class="field">
+          <label>เกรดเฉลี่ยรวม</label>
+          <input type="text" id="fGpa" placeholder="เช่น 3.25">
+        </div>
+        <div class="field">
+          <label>มหาวิทยาลัยที่จบการศึกษา</label>
+          <input type="text" id="fUniversity" placeholder="เช่น มหาวิทยาลัยเทคโนโลยีราชมงคลพระนคร">
+        </div>
       </div>
       <div class="field">
         <label>ประสบการณ์ทำงาน</label>
@@ -417,6 +428,17 @@
         <div class="filelist" id="filelist"></div>
         <div class="progress-bar" id="uploadProgressBar" style="display:none;">
           <div class="progress-bar-fill" id="uploadProgressFill"></div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>เอกสารที่แนบมาด้วย (ติ๊กเอกสารที่ส่งมาพร้อมใบสมัคร)</label>
+        <div class="doc-checklist">
+          <label><input type="checkbox" class="docCheck" value="บัตรประชาชน"> บัตรประชาชน</label>
+          <label><input type="checkbox" class="docCheck" value="ทะเบียนบ้าน"> ทะเบียนบ้าน</label>
+          <label><input type="checkbox" class="docCheck" value="ใบ สด.9 (ของผู้ชาย)"> ใบ สด.9 (ของผู้ชาย)</label>
+          <label><input type="checkbox" class="docCheck" value="หนังสือรับรองการทำงาน"> หนังสือรับรองการทำงาน</label>
+          <label><input type="checkbox" class="docCheck" value="ทรานสคริปต์"> ทรานสคริปต์</label>
         </div>
       </div>
 
@@ -449,7 +471,7 @@
     <div class="grid2">
       <div class="field">
         <label>ชื่อ-นามสกุล</label>
-        <input type="text" id="lookupName" placeholder="กรอกทั้งชื่อและนามสกุล">
+        <input type="text" id="lookupName" placeholder="ต้องกรอกทั้งชื่อและนามสกุล">
       </div>
       <div class="field">
         <label>เบอร์โทรศัพท์ หรือ อีเมล</label>
@@ -518,7 +540,7 @@ window.addEventListener('beforeunload', (e) => {
 });
 
 // วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้ (URL เดียวกับที่ใช้ใน admin.html)
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzu9b0vELZt21IRuwJN4t1GnR4u65_lu5CfeJixW9EvY6X0cL7nPi-N8AWT7_ewUzPI/exec';
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw2qz3vBli0s5Vv07IZrO4v4EtVzvrfBQiObnzziEisyxelgipbSNkalbtzM7lfL5M6/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -649,7 +671,7 @@ $('lookupBtn').addEventListener('click', async () => {
   if(name){
     const nameParts = name.split(/\s+/).filter(Boolean);
     if(nameParts.length < 2){
-      statusEl.textContent = 'กรุณากรอกทั้งชื่อและนามสกุล (เช่น ศิริชัย สุขนา) เพื่อป้องกันไม่ให้เห็นข้อมูลของคนอื่นที่ชื่อคล้ายกัน';
+      statusEl.textContent = 'กรุณากรอกทั้งชื่อและนามสกุล (เช่น สมชาย ชาติไทย) เพื่อป้องกันไม่ให้เห็นข้อมูลของคนอื่นที่ชื่อคล้ายกัน';
       statusEl.className = 'status-msg err';
       return;
     }
@@ -694,7 +716,10 @@ function renderApplicantCard(resultsEl, r, contact){
     <p><strong>ตำแหน่งที่สมัคร:</strong> ${escapeHtml(r.position)}</p>
     <p><strong>เงินเดือนที่คาดหวัง:</strong> ${escapeHtml(r.salary || '-')}</p>
     <p><strong>วุฒิการศึกษา:</strong> ${escapeHtml(r.education || '-')}</p>
+    <p><strong>เกรดเฉลี่ยรวม:</strong> ${escapeHtml(r.gpa || '-')}</p>
+    <p><strong>มหาวิทยาลัยที่จบการศึกษา:</strong> ${escapeHtml(r.university || '-')}</p>
     <p><strong>ประสบการณ์ทำงาน:</strong> ${escapeHtml(r.experience || '-')}</p>
+    <p><strong>เอกสารที่แนบมาด้วย:</strong> ${escapeHtml(r.documents || '-')}</p>
     <p><strong>ไฟล์แนบ:</strong> ${filesHtml}</p>
     <p><strong>วันที่ยื่นใบสมัคร:</strong> ${dateStr}</p>
     <p><strong>สถานะ:</strong> <span class="badge ${escapeHtml(r.status||'รอพิจารณา')}">${escapeHtml(r.status||'รอพิจารณา')}</span></p>
@@ -734,8 +759,19 @@ function toggleApplicantEdit(card, r, contact){
       <div class="field"><label>ตำแหน่งที่สมัคร</label><input type="text" data-f="ตำแหน่งที่สมัคร" value="${escapeHtml(r.position)}"></div>
       <div class="field"><label>เงินเดือนที่คาดหวัง</label><input type="text" data-f="เงินเดือนที่คาดหวัง" value="${escapeHtml(r.salary==='-'?'':(r.salary||''))}"></div>
       <div class="field"><label>วุฒิการศึกษา</label><input type="text" data-f="วุฒิการศึกษา" value="${escapeHtml(r.education==='-'?'':(r.education||''))}"></div>
+      <div class="field"><label>เกรดเฉลี่ยรวม</label><input type="text" data-f="เกรดเฉลี่ยรวม" value="${escapeHtml(r.gpa==='-'?'':(r.gpa||''))}"></div>
+      <div class="field"><label>มหาวิทยาลัยที่จบการศึกษา</label><input type="text" data-f="มหาวิทยาลัย" value="${escapeHtml(r.university==='-'?'':(r.university||''))}"></div>
     </div>
     <div class="field"><label>ประสบการณ์ทำงาน</label><textarea data-f="ประสบการณ์ทำงาน">${escapeHtml(r.experience==='-'?'':(r.experience||''))}</textarea></div>
+    <div class="field">
+      <label>เอกสารที่แนบมาด้วย</label>
+      <div class="doc-checklist" data-act="editDocChecklist">
+        ${['บัตรประชาชน','ทะเบียนบ้าน','ใบ สด.9 (ของผู้ชาย)','หนังสือรับรองการทำงาน','ทรานสคริปต์'].map(doc => {
+          const checked = (r.documents || '').split(',').map(s=>s.trim()).indexOf(doc) !== -1;
+          return `<label><input type="checkbox" class="editDocCheck" value="${escapeHtml(doc)}" ${checked?'checked':''}> ${escapeHtml(doc)}</label>`;
+        }).join('')}
+      </div>
+    </div>
     <div class="field">
       <label>ไฟล์แนบปัจจุบัน</label>
       <div class="filelist" data-act="existingFileList"></div>
@@ -825,6 +861,8 @@ async function submitApplicantEdit(box, card, r, contact){
 
   const fields = {};
   box.querySelectorAll('[data-f]').forEach(el => { fields[el.dataset.f] = el.value.trim(); });
+  const checkedDocs = Array.from(box.querySelectorAll('.editDocCheck:checked')).map(el => el.value);
+  fields['เอกสารที่แนบมาด้วย'] = checkedDocs.join(', ') || '-';
 
   const filesPayload = [];
   for(const f of (card._newFiles || [])){
@@ -996,6 +1034,8 @@ async function handleSubmit(e){
     }
     renderStatus('กำลังอัปโหลด... 0%', '');
 
+    const documents = Array.from(document.querySelectorAll('.docCheck:checked')).map(el => el.value).join(', ');
+
     const payload = {
       receiptNo,
       name,
@@ -1007,6 +1047,9 @@ async function handleSubmit(e){
       salary: $('fSalary').value.trim() || '-',
       education: education || '-',
       experience: $('fExperience').value.trim() || '-',
+      gpa: $('fGpa').value.trim() || '-',
+      university: $('fUniversity').value.trim() || '-',
+      documents: documents || '-',
       files: filesPayload
     };
 
