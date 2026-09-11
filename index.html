@@ -421,10 +421,10 @@
         <label>แนบเรซูเม่ / รูปถ่าย / เอกสารอื่นๆ</label>
         <div class="dropzone" id="dropzone">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          <p>คลิกเพื่อเลือกไฟล์ รองรับ PDF, JPG, PNG, DOC, DOCX</p>
+          <p>คลิกเพื่อเลือกไฟล์ รองรับ PDF, JPG, PNG, GIF, WEBP, HEIC, DOC, DOCX, XLS, XLSX, PPT, PPTX, TXT</p>
           <p style="margin-top:2px;">ไฟล์ละไม่เกิน 15 MB — แนบได้หลายไฟล์</p>
         </div>
-        <input type="file" id="fFiles" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display:none;">
+        <input type="file" id="fFiles" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="display:none;">
         <div class="filelist" id="filelist"></div>
         <div class="progress-bar" id="uploadProgressBar" style="display:none;">
           <div class="progress-bar-fill" id="uploadProgressFill"></div>
@@ -471,7 +471,7 @@
     <div class="grid2">
       <div class="field">
         <label>ชื่อ-นามสกุล</label>
-        <input type="text" id="lookupName" placeholder="ต้องกรอกทั้งชื่อและนามสกุล">
+        <input type="text" id="lookupName" placeholder="กรอกทั้งชื่อและนามสกุล">
       </div>
       <div class="field">
         <label>เบอร์โทรศัพท์ หรือ อีเมล</label>
@@ -539,8 +539,8 @@ window.addEventListener('beforeunload', (e) => {
   return '';
 });
 
-// วาง Web app URL ที่ได้จากการ Deploy Google Apps Script ตรงนี้ )
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx5K-fbnfBR-0IqtbVr_OQZjfL0cWY6nMWZIl6ZVHyw2axpnpnYCikBEaSq0U4tNuCS/exec';
+// วาง Web app URL  ตรงนี้ 
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyMptXlO_ZNviSydp6dK492_WxMhaRHAfoz2r3W7wV7xEKD8gMghXCNtPCe0Rdn75Y/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -671,7 +671,7 @@ $('lookupBtn').addEventListener('click', async () => {
   if(name){
     const nameParts = name.split(/\s+/).filter(Boolean);
     if(nameParts.length < 2){
-      statusEl.textContent = 'กรุณากรอกทั้งชื่อและนามสกุล (เช่น สมชาย ชาติไทย) เพื่อป้องกันไม่ให้เห็นข้อมูลของคนอื่นที่ชื่อคล้ายกัน';
+      statusEl.textContent = 'กรุณากรอกทั้งชื่อและนามสกุล เพื่อป้องกันไม่ให้เห็นข้อมูลของคนอื่นที่ชื่อคล้ายกัน';
       statusEl.className = 'status-msg err';
       return;
     }
@@ -779,7 +779,7 @@ function toggleApplicantEdit(card, r, contact){
     <div class="field">
       <label>แนบเอกสารเพิ่มเติม</label>
       <div class="dropzone" data-act="pickFile"><p>คลิกเพื่อเลือกไฟล์เพิ่มเติม (ไฟล์ละไม่เกิน 15 MB)</p></div>
-      <input type="file" multiple style="display:none;" data-act="fileInput">
+      <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt" style="display:none;" data-act="fileInput">
       <div class="filelist" data-act="fileListBox"></div>
     </div>
     <div class="submit-row">
