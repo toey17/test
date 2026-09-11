@@ -269,8 +269,8 @@ const STATUS_OPTIONS = ['รอพิจารณา', 'นัดสัมภา
 let staffSession = { password: null, role: null };
 let lastResults = [];
 
-// วาง Web app URL เดียวกับที่ใช้ใน job-application-form.html ตรงนี้
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzu9b0vELZt21IRuwJN4t1GnR4u65_lu5CfeJixW9EvY6X0cL7nPi-N8AWT7_ewUzPI/exec';
+// วาง Web app URL
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx5K-fbnfBR-0IqtbVr_OQZjfL0cWY6nMWZIl6ZVHyw2axpnpnYCikBEaSq0U4tNuCS/exec';
 
 // ================= เปิดดูไฟล์แนบในหน้าเว็บ (ไม่เปิดแท็บใหม่) =================
 function openFilePreview(url){
@@ -424,12 +424,19 @@ function openApplicationModal(r){
           <div class="doc-item"><strong>ตำแหน่งที่สมัคร</strong>${escapeHtml(r.position)}</div>
           <div class="doc-item"><strong>เงินเดือนที่คาดหวัง</strong>${escapeHtml(r.salary || '-')}</div>
           <div class="doc-item"><strong>วุฒิการศึกษาสูงสุด</strong>${escapeHtml(r.education || '-')}</div>
+          <div class="doc-item"><strong>เกรดเฉลี่ยรวม</strong>${escapeHtml(r.gpa || '-')}</div>
+          <div class="doc-item" style="grid-column:span 2;"><strong>มหาวิทยาลัยที่จบการศึกษา</strong>${escapeHtml(r.university || '-')}</div>
         </div>
       </div>
 
       <div class="doc-section">
         <div class="doc-section-title">ประสบการณ์ทำงาน</div>
         <div class="doc-item">${escapeHtml(r.experience || '-')}</div>
+      </div>
+
+      <div class="doc-section">
+        <div class="doc-section-title">เอกสารที่แนบมาด้วย</div>
+        <div class="doc-item">${escapeHtml(r.documents || '-')}</div>
       </div>
 
       <div class="doc-section">
@@ -680,8 +687,8 @@ $('exportCsvBtn').addEventListener('click', () => {
   const headers = [
     'วันที่/เวลาบันทึก', 'เลขที่ใบสมัคร', 'ชื่อ-นามสกุล', 'วันเกิด',
     'เบอร์โทรศัพท์', 'อีเมล', 'ที่อยู่', 'ตำแหน่งที่สมัคร',
-    'เงินเดือนที่คาดหวัง', 'วุฒิการศึกษา', 'ประสบการณ์ทำงาน', 'ไฟล์แนบ (ลิงก์)',
-    'สถานะ', 'หมายเหตุ'
+    'เงินเดือนที่คาดหวัง', 'วุฒิการศึกษา', 'เกรดเฉลี่ยรวม', 'มหาวิทยาลัย',
+    'ประสบการณ์ทำงาน', 'เอกสารที่แนบมาด้วย', 'ไฟล์แนบ (ลิงก์)', 'สถานะ', 'หมายเหตุ'
   ];
 
   const csvEscape = (val) => {
@@ -693,7 +700,8 @@ $('exportCsvBtn').addEventListener('click', () => {
   const rows = lastResults.map(r => [
     r.date ? new Date(r.date).toLocaleString('th-TH') : '',
     r.receiptNo, r.name, r.dob, r.phone, r.email, r.address, r.position,
-    r.salary, r.education, r.experience, (r.files || '').split('\n').filter(Boolean).join(' | '),
+    r.salary, r.education, r.gpa, r.university,
+    r.experience, r.documents, (r.files || '').split('\n').filter(Boolean).join(' | '),
     r.status, r.notes
   ]);
 
