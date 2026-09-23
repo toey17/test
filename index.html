@@ -334,7 +334,7 @@
       <div class="grid2">
         <div class="field" id="wrap_fName">
           <label>ชื่อ-นามสกุล<span class="req">*</span></label>
-          <input type="text" id="fName">
+          <input type="text" id="fName" autocomplete="off">
           <div class="field-error">กรุณากรอกชื่อ-นามสกุล</div>
         </div>
         <div class="field" id="wrap_fDob">
@@ -361,23 +361,8 @@
       <div class="grid2">
         <div class="field" id="wrap_fPosition">
           <label>ตำแหน่งที่สมัคร<span class="req">*</span></label>
-          <select id="fPosition">
-            <option value="">— เลือกตำแหน่ง —</option>
-            <option>เจ้าหน้าที่ธุรการ</option>
-            <option>ฝ่ายบัญชี</option>
-            <option>ฝ่ายขาย</option>
-            <option>ฝ่ายการตลาด</option>
-            <option>ฝ่ายทรัพยากรบุคคล</option>
-            <option>โปรแกรมเมอร์ / IT</option>
-            <option>ฝ่ายผลิต</option>
-            <option value="อื่นๆ">อื่นๆ (ระบุ)</option>
-          </select>
-          <div class="field-error">กรุณาเลือกตำแหน่งที่สมัคร</div>
-        </div>
-        <div class="field" id="otherPosWrap" style="display:none;">
-          <label>ระบุตำแหน่ง</label>
-          <input type="text" id="fPositionOther">
-          <div class="field-error">กรุณาระบุชื่อตำแหน่ง</div>
+          <input type="text" id="fPosition" autocomplete="off" placeholder="เช่น โปรแกรมเมอร์ / IT">
+          <div class="field-error">กรุณากรอกตำแหน่งที่สมัคร</div>
         </div>
         <div class="field">
           <label>เงินเดือนที่คาดหวัง</label>
@@ -436,7 +421,7 @@
         <div class="doc-checklist">
           <label><input type="checkbox" class="docCheck" value="บัตรประชาชน"> บัตรประชาชน</label>
           <label><input type="checkbox" class="docCheck" value="ทะเบียนบ้าน"> ทะเบียนบ้าน</label>
-          <label><input type="checkbox" class="docCheck" value="ใบ สด.9 "> ใบ สด.9 </label>
+          <label><input type="checkbox" class="docCheck" value="ใบ สด.9 (ของผู้ชาย)"> ใบ สด.9 (ของผู้ชาย)</label>
           <label><input type="checkbox" class="docCheck" value="หนังสือรับรองการทำงาน"> หนังสือรับรองการทำงาน</label>
           <label><input type="checkbox" class="docCheck" value="ทรานสคริปต์"> ทรานสคริปต์</label>
         </div>
@@ -471,11 +456,11 @@
     <div class="grid2">
       <div class="field">
         <label>ชื่อ-นามสกุล</label>
-        <input type="text" id="lookupName" placeholder="กรอกทั้งชื่อและนามสกุล">
+        <input type="text" id="lookupName" autocomplete="off" placeholder="เช่น ศิริชัย สุขนา (ต้องกรอกทั้งชื่อและนามสกุล)">
       </div>
       <div class="field">
         <label>เบอร์โทรศัพท์ หรือ อีเมล</label>
-        <input type="text" id="lookupContact" placeholder="เช่น 0812345678 หรือ name@email.com">
+        <input type="text" id="lookupContact" autocomplete="off" placeholder="เช่น 0812345678 หรือ name@email.com">
       </div>
     </div>
     <div class="submit-row">
@@ -539,8 +524,8 @@ window.addEventListener('beforeunload', (e) => {
   return '';
 });
 
-// วาง Web app URL  ตรงนี้ 
-const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyMptXlO_ZNviSydp6dK492_WxMhaRHAfoz2r3W7wV7xEKD8gMghXCNtPCe0Rdn75Y/exec';
+// วาง Web app URL ตรง
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw0Q613wsvGrH59NGahVR3W5P_yISHT90MkErr8IKrWY76bAq8qCAArvu4D6SAzfhW_/exec';
 
 // tabs
 $('tabApplyBtn').onclick = () => switchTab('apply');
@@ -552,12 +537,6 @@ function switchTab(name){
   $('applyPanel').style.display = isApply ? 'block' : 'none';
   $('viewPanel').style.display = isApply ? 'none' : 'block';
 }
-
-// position "other" toggle
-$('fPosition').addEventListener('change', (e)=>{
-  $('otherPosWrap').style.display = e.target.value === 'อื่นๆ' ? 'block' : 'none';
-  clearFieldError('wrap_fPosition');
-});
 
 // education "other" toggle
 $('fEducation').addEventListener('change', (e)=>{
@@ -671,7 +650,7 @@ $('lookupBtn').addEventListener('click', async () => {
   if(name){
     const nameParts = name.split(/\s+/).filter(Boolean);
     if(nameParts.length < 2){
-      statusEl.textContent = 'กรุณากรอกทั้งชื่อและนามสกุล เพื่อป้องกันไม่ให้เห็นข้อมูลของคนอื่นที่ชื่อคล้ายกัน';
+      statusEl.textContent = 'กรุณากรอกทั้งชื่อและนามสกุล (เช่น ศิริชัย สุขนา) เพื่อป้องกันไม่ให้เห็นข้อมูลของคนอื่นที่ชื่อคล้ายกัน';
       statusEl.className = 'status-msg err';
       return;
     }
@@ -925,13 +904,12 @@ function clearFieldError(wrapId){
   if(wrap) wrap.classList.remove('invalid');
 }
 function clearAllFieldErrors(){
-  ['wrap_fName','wrap_fPhone','wrap_fEmail','wrap_fPosition','otherPosWrap'].forEach(clearFieldError);
+  ['wrap_fName','wrap_fPhone','wrap_fEmail','wrap_fPosition'].forEach(clearFieldError);
 }
 
-['fName','fPhone','fEmail'].forEach(id=>{
+['fName','fPhone','fEmail','fPosition'].forEach(id=>{
   $(id).addEventListener('input', ()=> clearFieldError('wrap_'+id));
 });
-$('fPositionOther').addEventListener('input', ()=> clearFieldError('otherPosWrap'));
 
 function isValidEmail(v){
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
@@ -979,9 +957,7 @@ async function handleSubmit(e){
   const name = $('fName').value.trim();
   const phone = $('fPhone').value.trim();
   const email = $('fEmail').value.trim();
-  const positionSelectVal = $('fPosition').value;
-  const positionOtherVal = $('fPositionOther').value.trim();
-  const position = positionSelectVal === 'อื่นๆ' ? positionOtherVal : positionSelectVal;
+  const position = $('fPosition').value.trim();
   const eduSelectVal = $('fEducation').value;
   const eduOtherVal = $('fEducationOther').value.trim();
   const education = eduSelectVal === 'อื่นๆ' ? eduOtherVal : eduSelectVal;
@@ -995,8 +971,7 @@ async function handleSubmit(e){
   if(!name) markInvalid('wrap_fName');
   if(!phone) markInvalid('wrap_fPhone');
   if(!email || !isValidEmail(email)) markInvalid('wrap_fEmail');
-  if(!positionSelectVal) markInvalid('wrap_fPosition');
-  if(positionSelectVal === 'อื่นๆ' && !positionOtherVal) markInvalid('otherPosWrap');
+  if(!position) markInvalid('wrap_fPosition');
 
   if(firstInvalidWrap){
     renderStatus('กรุณากรอกข้อมูลในช่องที่ไฮไลต์สีแดงให้ครบถ้วนและถูกต้อง', 'err');
@@ -1080,7 +1055,6 @@ async function handleSubmit(e){
     $('appForm').reset();
     selectedFiles = [];
     renderFileList();
-    $('otherPosWrap').style.display = 'none';
     $('otherEduWrap').style.display = 'none';
     clearAllFieldErrors();
   }catch(err){
